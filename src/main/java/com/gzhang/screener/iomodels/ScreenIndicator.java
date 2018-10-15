@@ -6,20 +6,22 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class AppUser {
+public class ScreenIndicator {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
+    int groupId;
+    float parameterPercentChange;
+    String parameterTimeInterval;
+    boolean parameterDirection;
 
-    @OneToMany(fetch = FetchType.LAZY,
-            mappedBy = "appUser",
-            cascade = CascadeType.ALL)
-    List<ScreenIndicatorGrouping> screenIndicatorGroupingList;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "groupId")
+    ScreenIndicatorGrouping screenIndicatorGrouping;
 }

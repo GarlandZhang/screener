@@ -13,13 +13,18 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class AppUser {
+public class ScreenIndicatorGrouping {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
+    int userId;
 
-    @OneToMany(fetch = FetchType.LAZY,
-            mappedBy = "appUser",
+    @OneToMany(fetch = FetchType.EAGER,
+            mappedBy = "screenIndicatorGrouping",
             cascade = CascadeType.ALL)
-    List<ScreenIndicatorGrouping> screenIndicatorGroupingList;
+    List<ScreenIndicator> screenIndicatorList;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userId")
+    AppUser appUser;
 }

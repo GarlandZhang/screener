@@ -1,20 +1,24 @@
 package com.gzhang.screener.controllers;
 
 import com.gzhang.screener.iomodels.DailyStockData;
+import com.gzhang.screener.iomodels.ScreenIndicator;
+import com.gzhang.screener.iomodels.ScreenIndicatorGrouping;
 import com.gzhang.screener.iomodels.StockMetadata;
+import com.gzhang.screener.iomodels.metamodels.ListOfScreenIndicatorGroupings;
 import com.gzhang.screener.iomodels.metamodels.SymbolList;
 import com.gzhang.screener.iomodels.metamodels.TimeInterval;
 import com.gzhang.screener.repositories.DailyStockDataRepository;
 import com.gzhang.screener.repositories.StockMetadataRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.sql.Date;
 import java.util.List;
 
-@Controller
+@RestController
 public class ScreenerController {
 
     @Autowired
@@ -24,16 +28,13 @@ public class ScreenerController {
     DailyStockDataRepository dailyStockDataRepository;
 
     @GetMapping("/screen/stocks")
-    public SymbolList screenStocksWithPerformanceIndicators(@RequestParam(defaultValue = "5") Float performance1PercentChange,
-                                                            @RequestParam(defaultValue = "LATEST") String performance1TimeInterval,
-                                                            @RequestParam(defaultValue = "true") Boolean performance1Direction,
-                                                            @RequestParam(required = false) Float performance2PercentChange,
-                                                            @RequestParam(required = false) String performance2TimeInterval,
-                                                            @RequestParam(required = false) Boolean performance2Direction) {
+    public ResponseEntity<SymbolList> screenStocksWithPerformanceIndicators(@RequestBody ScreenIndicatorGrouping grouping) {
         // sanitize input
-        if(performance2PercentChange == null) performance2PercentChange = performance1PercentChange;
-        if(performance2TimeInterval == null) performance2TimeInterval = performance1TimeInterval;
-        if(performance2Direction == null) performance2Direction = performance1Direction;
+        if(!validGrouping(grouping)) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .header("Status", "200: OK")
+                    .body(new SymbolList());
+        }
 
         // fetch all stocks
         List<StockMetadata> listOfStocks = stockMetadataRepository.getAll();
@@ -43,22 +44,35 @@ public class ScreenerController {
 
         // check each stock
         for(StockMetadata stock : listOfStocks) {
-            if (stockMeetsPerformanceCriteria(stock,
-                    performance1PercentChange,
-                    performance1TimeInterval,
-                    performance1Direction,
-                    performance2PercentChange,
-                    performance2TimeInterval,
-                    performance2Direction)) {
+            // check all performance indicator
+            if(stockMeetsScreenGrouping(stock, grouping)) {
                 symbolList.add(stock);
                 System.out.println(stock.getTicker());
             }
         }
 
-        return symbolList;
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Status", "200: OK")
+                .body(symbolList);
     }
 
-    private boolean stockMeetsPerformanceCriteria(StockMetadata stock, float performance1PercentChange, String performance1TimeInterval, boolean performance1Direction, float performance2PercentChange, String performance2TimeInterval, boolean performance2Direction) {
+    private boolean stockMeetsScreenGrouping(StockMetadata stock, ScreenIndicatorGrouping screenIndicatorGrouping) {
+        // check each performance indicator
+        for(ScreenIndicator screenIndicator : screenIndicatorGrouping.getScreenIndicatorList()) {
+            if(!stockMeetsPerformanceCriteria(stock,
+                    screenIndicator.getParameterPercentChange(),
+                    screenIndicator.getParameterTimeInterval(),
+                    screenIndicator.isParameterDirection())) return false;
+        }
+
+        return true;
+    }
+
+    private boolean validGrouping(ScreenIndicatorGrouping grouping) {
+        return grouping.getScreenIndicatorList() != null && grouping.getScreenIndicatorList().size() > 0;
+    }
+
+    private boolean stockMeetsPerformanceCriteria(StockMetadata stock, float performancePercentChange, String performanceTimeInterval, boolean performanceDirection) {
 
         // get list of daily stock data for the given stock
         // assumption: sorted in reverse chronological order
@@ -66,11 +80,9 @@ public class ScreenerController {
 
         // get entries to compare for meeting performance criteria
         DailyStockData latestDayEntry = getDayEntry(dailyStockData, "LATEST");
-        DailyStockData performance1DayEntry = getDayEntry(dailyStockData, performance1TimeInterval);
-        DailyStockData performance2DayEntry = getDayEntry(dailyStockData, performance2TimeInterval);
+        DailyStockData performance1DayEntry = getDayEntry(dailyStockData, performanceTimeInterval);
 
-        return dayEntryMeetsCriteria(latestDayEntry, performance1DayEntry, performance1PercentChange, performance1Direction)
-            && dayEntryMeetsCriteria(latestDayEntry, performance2DayEntry, performance2PercentChange, performance2Direction);
+        return dayEntryMeetsCriteria(latestDayEntry, performance1DayEntry, performancePercentChange, performanceDirection);
     }
 
     private boolean dayEntryMeetsCriteria(DailyStockData latestDayEntry, DailyStockData performanceDayEntry, float performancePercentChange, boolean performanceDirection) {
