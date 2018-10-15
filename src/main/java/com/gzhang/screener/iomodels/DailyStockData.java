@@ -5,10 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 import java.math.BigInteger;
 import java.sql.Date;
 
@@ -18,13 +15,15 @@ import java.sql.Date;
 @AllArgsConstructor
 @Entity
 public class DailyStockData {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
     int metadataId;
     Date dateCreated;
-    double openPrice;
-    double highPrice;
-    double lowPrice;
-    double closePrice;
+    float openPrice;
+    float highPrice;
+    float lowPrice;
+    float closePrice;
     long volume;
 
     @ManyToOne(fetch = FetchType.LAZY)

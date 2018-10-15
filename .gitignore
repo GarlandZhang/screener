@@ -25,5 +25,4 @@
 /.nb-gradle/
 
 ### Data Files ###
-stock-data.txt
-stock-tickers.txt
+*.txt

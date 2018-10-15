@@ -5,10 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.OneToMany;
+import javax.persistence.*;
 import java.util.List;
 
 @Getter
@@ -17,6 +14,8 @@ import java.util.List;
 @AllArgsConstructor
 @Entity
 public class StockMetadata {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
     String ticker;
 

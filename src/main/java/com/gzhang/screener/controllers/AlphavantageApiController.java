@@ -1,7 +1,10 @@
 package com.gzhang.screener.controllers;
 
-import com.gzhang.screener.iomodels.metamodels.AlphavantageObject;
-import com.sun.xml.internal.ws.api.message.ExceptionHasMessage;
+import com.gzhang.screener.iomodels.DailyStockData;
+import com.gzhang.screener.iomodels.StockMetadata;
+import com.gzhang.screener.repositories.DailyStockDataRepository;
+import com.gzhang.screener.repositories.StockMetadataRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,19 +17,36 @@ import java.util.Scanner;
 @Controller
 public class AlphavantageApiController {
 
+    @Autowired
+    StockMetadataRepository stockMetadataRepository;
+
+    @Autowired
+    DailyStockDataRepository dailyStockDataRepository;
+
     @GetMapping("/parse")
     public String parseStockData() throws Exception {
-        Scanner sc = new Scanner(new File("./src/main/resources/stock-data.txt"));
+        Scanner sc = new Scanner(new File("./src/main/resources/new-stock-data.txt"));
 
         int index = 0;
 
-        while(sc.hasNextLine() && index < 3) {
+        while(sc.hasNextLine()) {
+
+            boolean isRepeat = true;
+
             ++index;
             String openBrace = sc.nextLine();
-            if(!openBrace.equals("{")) throw new Exception("Open brace is not here but it should be.");
-
+            if(!openBrace.equals("{")) {
+                //System.out.println("index: " + index);
+                throw new Exception("Open brace is not here but it should be.");
+            }
             String metaDataTitle = sc.nextLine();
-            if(!metaDataTitle.equals("\"Meta Data\": {")) throw new Exception("Meta data title is not here but it should be.");
+            if(metaDataTitle.contains("\"Information\": \"Thank you for using Alpha Vantage! ")) {
+                sc.nextLine();
+                continue;
+            } else if(metaDataTitle.contains("\"Error Message\": \"Invalid API call.")) {
+                sc.nextLine();
+                continue;
+            }
 
             String infoPair = sc.nextLine(); // not needed
 
@@ -35,9 +55,17 @@ public class AlphavantageApiController {
             //additional string parsing for symbol
             String symbol = symbolPair.substring(symbolPair.indexOf(':') + ": \"".length(), symbolPair.lastIndexOf("\""));
 
+            //System.out.println("Symbol: " + symbol);
+
             /* **** WHAT I WANT **** */
 
-
+            StockMetadata stockMetadata = stockMetadataRepository.getByTickerSymbol(symbol);
+            if(stockMetadata == null) {
+                isRepeat = false;
+                stockMetadata = new StockMetadata();
+                stockMetadata.setTicker(symbol);
+                stockMetadata = stockMetadataRepository.save(stockMetadata);
+            }
 
             //clutter not needed
             String lastRefreshedPair = sc.nextLine();
@@ -45,35 +73,68 @@ public class AlphavantageApiController {
             String timeZonePair = sc.nextLine();
 
             String closeMetaDataTitle = sc.nextLine();
-            if(!closeMetaDataTitle.equals("},") && !closeMetaDataTitle.equals("}")) throw new Exception("Meta data close brace is not here but it should be.");
+            if(!closeMetaDataTitle.contains("},") && !closeMetaDataTitle.contains("}")) throw new Exception("Meta data close brace is not here but it should be.");
 
             String timerSeriesTitle = sc.nextLine();
-            if(!timerSeriesTitle.equals("\"Time Series (Daily)\": {")) throw new Exception("Time Series title is not here but should be.");
+            if(!timerSeriesTitle.contains("\"Time Series (Daily)\": {")) throw new Exception("Time Series title is not here but should be.");
 
             String dateEntry;
-            while(!(dateEntry = sc.nextLine()).equals("}")) {
-                Date date = Date.valueOf(dateEntry.substring(dateEntry.indexOf('\"'), dateEntry.lastIndexOf('\"')));
+            while(!(dateEntry = sc.nextLine()).contains("}")) {
+
+                //System.out.println("================");
+
+                String dateStr = dateEntry.substring(dateEntry.indexOf('\"') + 1, dateEntry.lastIndexOf('\"'));
+
+                //System.out.println("Date: " + dateStr);
+
+                Date date = Date.valueOf(dateEntry.substring(dateEntry.indexOf('\"') + 1, dateEntry.lastIndexOf('\"')));
 
                 String openPriceEntry = sc.nextLine();
-                double openPrice = Double.parseDouble(openPriceEntry.substring(openPriceEntry.indexOf(':') + ": \"".length(), openPriceEntry.lastIndexOf("\"")));
+                float openPrice = Float.parseFloat(openPriceEntry.substring(openPriceEntry.indexOf(':') + ": \"".length(), openPriceEntry.lastIndexOf("\"")));
+
+                //System.out.println("Open Price: " + openPrice);
 
                 String highPriceEntry = sc.nextLine();
-                double highPrice = Double.parseDouble(highPriceEntry.substring(highPriceEntry.indexOf(':') + ": \"".length(), highPriceEntry.lastIndexOf("\"")));
+                float highPrice = Float.parseFloat(highPriceEntry.substring(highPriceEntry.indexOf(':') + ": \"".length(), highPriceEntry.lastIndexOf("\"")));
+
+                //System.out.println("High Price: " + highPrice);
 
                 String lowPriceEntry = sc.nextLine();
-                double lowPrice = Double.parseDouble(lowPriceEntry.substring(lowPriceEntry.indexOf(':') + ": \"".length(), lowPriceEntry.lastIndexOf("\"")));
+                float lowPrice = Float.parseFloat(lowPriceEntry.substring(lowPriceEntry.indexOf(':') + ": \"".length(), lowPriceEntry.lastIndexOf("\"")));
+
+                //System.out.println("Low Price: " + lowPrice);
 
                 String closePriceEntry = sc.nextLine();
-                double closePrice = Double.parseDouble(closePriceEntry.substring(closePriceEntry.indexOf(':') + ": \"".length(), closePriceEntry.lastIndexOf("\"")));
+                float closePrice = Float.parseFloat(closePriceEntry.substring(closePriceEntry.indexOf(':') + ": \"".length(), closePriceEntry.lastIndexOf("\"")));
+
+                //System.out.println("Close Price: " + closePrice);
 
                 String volumeEntry = sc.nextLine();
                 long volume = Long.parseLong(volumeEntry.substring(volumeEntry.indexOf(':') + ": \"".length(), volumeEntry.lastIndexOf("\"")));
 
+                //System.out.println("Volume: " + volume);
+
                 String endingBrace = sc.nextLine();
-                if(!endingBrace.equals("}") && !endingBrace.equals("},")) throw new Exception("Found: " + endingBrace + ", instead of \"},\"");
+                if(!endingBrace.contains("}") && !endingBrace.contains("},")) throw new Exception("Found: " + endingBrace + ", instead of \"},\"");
+
+                //System.out.println("================");
+
+                DailyStockData dailyStockData = new DailyStockData();
+                dailyStockData.setMetadataId(stockMetadata.getId());
+                dailyStockData.setDateCreated(date);
+                dailyStockData.setOpenPrice(openPrice);
+                dailyStockData.setHighPrice(highPrice);
+                dailyStockData.setLowPrice(lowPrice);
+                dailyStockData.setClosePrice(closePrice);
+                dailyStockData.setVolume(volume);
+
+                if(!isRepeat) dailyStockDataRepository.save(dailyStockData);
+                // of course this is only cause im not getting any new information (all historic) so im assuming any new data is repeated data for the same ticker company
             }
 
             String finalBrace = sc.nextLine();
+
+            //System.out.println("================================");
         }
 
         return "success";
