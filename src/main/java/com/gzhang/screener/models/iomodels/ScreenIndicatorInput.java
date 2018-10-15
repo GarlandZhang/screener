@@ -15,6 +15,12 @@ public class ScreenIndicatorInput {
     String parameterTimeInterval;
     boolean parameterDirection;
 
+    public ScreenIndicatorInput(ScreenIndicator screenIndicator) {
+        parameterPercentChange = screenIndicator.getParameterPercentChange();
+        parameterTimeInterval = screenIndicator.getParameterTimeInterval();
+        parameterDirection = screenIndicator.isParameterDirection();
+    }
+
     public ScreenIndicator toScreenIndicator() {
         ScreenIndicator screenIndicator = new ScreenIndicator();
         screenIndicator.setParameterTimeInterval(parameterTimeInterval);

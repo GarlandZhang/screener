@@ -46,6 +46,7 @@ public class ScreenerController {
 
         // store in grouping
         ScreenIndicatorGrouping grouping = new ScreenIndicatorGrouping();
+        grouping = screenIndicatorGroupingRepository.save(grouping);
         grouping.addIndicator(screenIndicatorInput.toScreenIndicator());
         grouping.setUserId(userId);
 
@@ -74,10 +75,11 @@ public class ScreenerController {
     }
 
 
-    @GetMapping("/screen/stocks")
-    public ResponseEntity<SymbolList> screenStocksWithPerformanceIndicators(@RequestBody ScreenIndicatorGroupingInput groupingInput) {
+    @GetMapping("/group/{groupId}/screen/stocks")
+    public ResponseEntity<SymbolList> screenStocksWithPerformanceIndicators(@PathVariable int groupId) {
+        ScreenIndicatorGrouping grouping = screenIndicatorGroupingRepository.getById(groupId);
         // sanitize input
-        if(!validGroupingInput(groupingInput)) {
+        if(grouping == null) {
             return ResponseEntity.status(HttpStatus.OK)
                     .header("Message", "OK")
                     .body(new SymbolList());
@@ -92,24 +94,24 @@ public class ScreenerController {
         // check each stock
         for(StockMetadata stock : listOfStocks) {
             // check all performance indicator
-            if(stockMeetsScreenGrouping(stock, groupingInput)) {
+            if(stockMeetsScreenGrouping(stock, grouping)) {
                 symbolList.add(stock);
                 System.out.println(stock.getTicker());
             }
         }
 
         return ResponseEntity.status(HttpStatus.OK)
-                .header("Status", "200: OK")
+                .header("Message", "OK")
                 .body(symbolList);
     }
 
-    private boolean stockMeetsScreenGrouping(StockMetadata stock, ScreenIndicatorGroupingInput screenIndicatorGroupingInput) {
+    private boolean stockMeetsScreenGrouping(StockMetadata stock, ScreenIndicatorGrouping screenIndicatorGrouping) {
         // check each performance indicator
-        for(ScreenIndicatorInput screenIndicatorInput : screenIndicatorGroupingInput.getScreenIndicatorInputList()) {
+        for(ScreenIndicator screenIndicator : screenIndicatorGrouping.getScreenIndicatorList()) {
             if(!stockMeetsPerformanceCriteria(stock,
-                    screenIndicatorInput.getParameterPercentChange(),
-                    screenIndicatorInput.getParameterTimeInterval(),
-                    screenIndicatorInput.isParameterDirection())) return false;
+                    screenIndicator.getParameterPercentChange(),
+                    screenIndicator.getParameterTimeInterval(),
+                    screenIndicator.isParameterDirection())) return false;
         }
 
         return true;

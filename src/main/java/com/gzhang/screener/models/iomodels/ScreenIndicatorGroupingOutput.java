@@ -14,6 +14,8 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 public class ScreenIndicatorGroupingOutput {
+    int groupId;
+    int userId;
     List<ScreenIndicatorOutput> screenIndicatorOutputList;
 
     public ScreenIndicatorGroupingOutput() {
@@ -22,6 +24,8 @@ public class ScreenIndicatorGroupingOutput {
 
     public ScreenIndicatorGroupingOutput(ScreenIndicatorGrouping screenIndicatorGrouping) {
         this();
+        groupId = screenIndicatorGrouping.getId();
+        userId = screenIndicatorGrouping.getUserId();
         for(ScreenIndicator screenIndicator: screenIndicatorGrouping.getScreenIndicatorList()) {
             screenIndicatorOutputList.add(new ScreenIndicatorOutput(screenIndicator));
         }

@@ -14,4 +14,9 @@ public class ScreenIndicatorGroupingRepositoryImpl implements ScreenIndicatorGro
     public ScreenIndicatorGrouping save(ScreenIndicatorGrouping screenIndicatorGrouping) {
         return screenIndicatorGroupingJpaRepository.save(screenIndicatorGrouping);
     }
+
+    @Override
+    public ScreenIndicatorGrouping getById(int groupId) {
+        return screenIndicatorGroupingJpaRepository.findScreenIndicatorGroupingById(groupId);
+    }
 }

@@ -12,10 +12,20 @@ import java.util.List;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
 public class ScreenIndicatorGroupingInput {
     List<ScreenIndicatorInput> screenIndicatorInputList;
+
+    public ScreenIndicatorGroupingInput() {
+        screenIndicatorInputList = new ArrayList<>();
+    }
+
+    public ScreenIndicatorGroupingInput(ScreenIndicatorGrouping screenIndicatorGrouping) {
+        this();
+        for(ScreenIndicator screenIndicator : screenIndicatorGrouping.getScreenIndicatorList()) {
+            screenIndicatorInputList.add(new ScreenIndicatorInput(screenIndicator));
+        }
+    }
 
     public ScreenIndicatorGrouping toGrouping() {
         ScreenIndicatorGrouping screenIndicatorGrouping = new ScreenIndicatorGrouping();
