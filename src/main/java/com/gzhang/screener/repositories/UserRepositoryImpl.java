@@ -17,4 +17,9 @@ public class UserRepositoryImpl implements UserRepository {
     public AppUser save(AppUser appUser) {
         return userJpaRepository.save(appUser);
     }
+
+    @Override
+    public AppUser getUserById(int userId) {
+        return userJpaRepository.findAppUserById(userId);
+    }
 }

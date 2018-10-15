@@ -23,4 +23,7 @@ public class AppUser {
             cascade = CascadeType.ALL,
             orphanRemoval = true)
     List<ScreenIndicatorGrouping> screenIndicatorGroupingList;
+/*
+    @OneToOne(fetch = FetchType.LAZY, mappedBy = "appUser", cascade = CascadeType.ALL)
+    StockTwitsUser stockTwitsUser;*/
 }
