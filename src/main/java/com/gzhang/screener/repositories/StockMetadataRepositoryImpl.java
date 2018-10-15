@@ -5,6 +5,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 @NoArgsConstructor
 public class StockMetadataRepositoryImpl implements StockMetadataRepository {
@@ -21,6 +23,12 @@ public class StockMetadataRepositoryImpl implements StockMetadataRepository {
     @Override
     public StockMetadata getById(int id) {
         return stockMetadataJpaRepository.findStockMetadataById(id);
+    }
+
+    @Override
+    public List<StockMetadata> getAll() {
+        return stockMetadataJpaRepository.findAll();
+
     }
 
     @Override

@@ -14,6 +14,9 @@ import java.io.*;
 import java.sql.Date;
 import java.util.Scanner;
 
+/**
+ * to fetch daily stock data
+ */
 @Controller
 public class AlphavantageApiController {
 
@@ -23,6 +26,12 @@ public class AlphavantageApiController {
     @Autowired
     DailyStockDataRepository dailyStockDataRepository;
 
+    /**
+     * parseStockData() parses through the text file that I created to temporarily store API responses
+     *
+     * @return
+     * @throws Exception
+     */
     @GetMapping("/parse")
     public String parseStockData() throws Exception {
         Scanner sc = new Scanner(new File("./src/main/resources/new-stock-data.txt"));
@@ -140,8 +149,14 @@ public class AlphavantageApiController {
         return "success";
     }
 
-    @GetMapping("/test")
-    public String getQuandlData() throws IOException, InterruptedException {
+    /**
+     * getAlphavantageStockDailyData()
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @GetMapping("/stock/daily")
+    public String getAlphavantageStockDailyData() throws IOException, InterruptedException {
 
         //api.key=RD164SI5XMGA32WL
         RestTemplate restTemplate = new RestTemplate();
