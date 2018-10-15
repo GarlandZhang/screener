@@ -9,6 +9,7 @@ import com.gzhang.screener.repositories.StockMetadataRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.sql.Date;
 import java.util.List;
@@ -22,13 +23,18 @@ public class ScreenerController {
     @Autowired
     DailyStockDataRepository dailyStockDataRepository;
 
-    @GetMapping("/test")
-    public SymbolList screenStocksWithPerformanceIndicators(float performance1PercentChange,
-                                                            String performance1TimeInterval,
-                                                            boolean performance1Direction,
-                                                            float perforomance2PercentChange,
-                                                            String performance2TimeInterval,
-                                                            boolean performance2Direction) {
+    @GetMapping("/screen/stocks")
+    public SymbolList screenStocksWithPerformanceIndicators(@RequestParam(defaultValue = "5") Float performance1PercentChange,
+                                                            @RequestParam(defaultValue = "LATEST") String performance1TimeInterval,
+                                                            @RequestParam(defaultValue = "true") Boolean performance1Direction,
+                                                            @RequestParam(required = false) Float performance2PercentChange,
+                                                            @RequestParam(required = false) String performance2TimeInterval,
+                                                            @RequestParam(required = false) Boolean performance2Direction) {
+        // sanitize input
+        if(performance2PercentChange == null) performance2PercentChange = performance1PercentChange;
+        if(performance2TimeInterval == null) performance2TimeInterval = performance1TimeInterval;
+        if(performance2Direction == null) performance2Direction = performance1Direction;
+
         // fetch all stocks
         List<StockMetadata> listOfStocks = stockMetadataRepository.getAll();
 
@@ -41,9 +47,12 @@ public class ScreenerController {
                     performance1PercentChange,
                     performance1TimeInterval,
                     performance1Direction,
-                    perforomance2PercentChange,
+                    performance2PercentChange,
                     performance2TimeInterval,
-                    performance2Direction)) symbolList.add(stock);
+                    performance2Direction)) {
+                symbolList.add(stock);
+                System.out.println(stock.getTicker());
+            }
         }
 
         return symbolList;
@@ -70,8 +79,8 @@ public class ScreenerController {
         float change = (latestDayEntry.getClosePrice()
                 - performanceDayEntry.getOpenPrice())
                         / performanceDayEntry.getOpenPrice();
-        return performanceDirection ? change >= performancePercentChange :
-                                      change <= performancePercentChange;
+        return performanceDirection ? change >= (performancePercentChange / 100.00) :
+                                      change <= (performancePercentChange / 100.00);
     }
 
     private DailyStockData getDayEntry(List<DailyStockData> dailyStockDataList, String timeIntervalField) {
@@ -101,7 +110,9 @@ public class ScreenerController {
     }
 
     private boolean withinTimeInterval(Date dateEntry, Date latestDate, TimeInterval timeInterval) {
-        return latestDate.getTime() - dateEntry.getTime() < timeInterval.getNumMillis();
+        return latestDate.getTime()
+             - dateEntry.getTime()
+                <= timeInterval.getNumMillis();
     }
 
     private TimeInterval getTimeIntervalFromField(String timeIntervalField) {

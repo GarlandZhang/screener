@@ -10,6 +10,6 @@ import java.util.List;
 
 public interface DailyStockDataJpaRepository extends JpaRepository<DailyStockData, Integer> {
 
-    @Query ("SELECT d FROM DailyStockData d WHERE d.metadataId = :metadataId ORDER BY d.dateCreated")
+    @Query ("SELECT d FROM DailyStockData d WHERE d.metadataId = :metadataId ORDER BY d.dateCreated DESC")
     List<DailyStockData> findAllByMetadataId(@Param("metadataId") int metadataId);
 }
