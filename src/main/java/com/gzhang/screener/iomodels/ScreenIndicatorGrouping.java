@@ -25,6 +25,6 @@ public class ScreenIndicatorGrouping {
     List<ScreenIndicator> screenIndicatorList;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId")
+    @JoinColumn(name = "userId", insertable = false, updatable = false)
     AppUser appUser;
 }

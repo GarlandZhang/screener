@@ -22,6 +22,6 @@ public class ScreenIndicator {
     boolean parameterDirection;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "groupId")
+    @JoinColumn(name = "groupId", insertable = false, updatable = false)
     ScreenIndicatorGrouping screenIndicatorGrouping;
 }
