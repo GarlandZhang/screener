@@ -1,4 +1,4 @@
-package com.gzhang.screener.iomodels.metamodels;
+package com.gzhang.screener.models.metamodels;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,7 +11,6 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TimeSeriesEntry {
-    String date;
-    List<PricePair> pricePairList;
+public class TimeSeriesEntryList {
+    List<TimeSeriesEntry> timeSeriesEntries;
 }

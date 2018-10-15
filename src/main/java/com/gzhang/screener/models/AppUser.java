@@ -1,4 +1,4 @@
-package com.gzhang.screener.iomodels;
+package com.gzhang.screener.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,12 +13,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class StockMetadata {
+public class AppUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
-    String ticker;
 
-    @OneToMany(mappedBy = "stockMetadata", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    List<DailyStockData> dailyStockDataList;
+    @OneToMany(fetch = FetchType.LAZY,
+            mappedBy = "appUser",
+            cascade = CascadeType.ALL)
+    List<ScreenIndicatorGrouping> screenIndicatorGroupingList;
 }

@@ -1,4 +1,4 @@
-package com.gzhang.screener.iomodels;
+package com.gzhang.screener.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -27,4 +28,11 @@ public class ScreenIndicatorGrouping {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId", insertable = false, updatable = false)
     AppUser appUser;
+
+    public void addIndicator(ScreenIndicator screenIndicator) {
+        if(screenIndicatorList == null) screenIndicatorList = new ArrayList<>();
+
+        screenIndicator.setGroupId(id);
+        screenIndicatorList.add(screenIndicator);
+    }
 }

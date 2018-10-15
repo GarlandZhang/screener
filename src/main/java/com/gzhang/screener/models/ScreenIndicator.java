@@ -1,4 +1,4 @@
-package com.gzhang.screener.iomodels;
+package com.gzhang.screener.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

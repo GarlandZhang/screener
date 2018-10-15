@@ -1,6 +1,6 @@
-package com.gzhang.screener.iomodels.metamodels;
+package com.gzhang.screener.models.metamodels;
 
-import com.gzhang.screener.iomodels.ScreenIndicatorGrouping;
+import com.gzhang.screener.models.ScreenIndicatorGrouping;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

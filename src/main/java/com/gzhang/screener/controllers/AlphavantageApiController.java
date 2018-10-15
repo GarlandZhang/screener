@@ -1,12 +1,11 @@
 package com.gzhang.screener.controllers;
 
-import com.gzhang.screener.iomodels.DailyStockData;
-import com.gzhang.screener.iomodels.StockMetadata;
+import com.gzhang.screener.models.DailyStockData;
+import com.gzhang.screener.models.StockMetadata;
 import com.gzhang.screener.repositories.DailyStockDataRepository;
 import com.gzhang.screener.repositories.StockMetadataRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;

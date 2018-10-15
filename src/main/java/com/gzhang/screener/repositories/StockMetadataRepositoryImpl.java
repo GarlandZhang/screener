@@ -1,6 +1,6 @@
 package com.gzhang.screener.repositories;
 
-import com.gzhang.screener.iomodels.StockMetadata;
+import com.gzhang.screener.models.StockMetadata;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;

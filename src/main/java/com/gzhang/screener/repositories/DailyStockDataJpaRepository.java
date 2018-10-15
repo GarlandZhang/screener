@@ -1,7 +1,6 @@
 package com.gzhang.screener.repositories;
 
-import com.gzhang.screener.iomodels.DailyStockData;
-import com.gzhang.screener.iomodels.StockMetadata;
+import com.gzhang.screener.models.DailyStockData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

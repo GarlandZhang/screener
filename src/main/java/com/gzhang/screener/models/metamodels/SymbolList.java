@@ -1,9 +1,8 @@
-package com.gzhang.screener.iomodels.metamodels;
+package com.gzhang.screener.models.metamodels;
 
-import com.gzhang.screener.iomodels.StockMetadata;
+import com.gzhang.screener.models.StockMetadata;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;

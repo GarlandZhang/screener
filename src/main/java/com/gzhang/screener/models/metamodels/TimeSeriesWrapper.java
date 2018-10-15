@@ -1,4 +1,4 @@
-package com.gzhang.screener.iomodels.metamodels;
+package com.gzhang.screener.models.metamodels;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PricePair {
-    String priceType;
-    String value;
+public class TimeSeriesWrapper {
+    String timeInterval;
+    TimeSeriesEntryList timeSeriesEntryList;
 }

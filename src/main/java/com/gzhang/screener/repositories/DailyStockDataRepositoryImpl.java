@@ -1,6 +1,6 @@
 package com.gzhang.screener.repositories;
 
-import com.gzhang.screener.iomodels.DailyStockData;
+import com.gzhang.screener.models.DailyStockData;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;

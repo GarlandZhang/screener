@@ -1,6 +1,6 @@
 package com.gzhang.screener.repositories;
 
-import com.gzhang.screener.iomodels.StockMetadata;
+import com.gzhang.screener.models.StockMetadata;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface StockMetadataJpaRepository extends JpaRepository<StockMetadata, Integer> {

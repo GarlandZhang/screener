@@ -1,18 +1,20 @@
 package com.gzhang.screener.controllers;
 
-import com.gzhang.screener.iomodels.DailyStockData;
-import com.gzhang.screener.iomodels.ScreenIndicator;
-import com.gzhang.screener.iomodels.ScreenIndicatorGrouping;
-import com.gzhang.screener.iomodels.StockMetadata;
-import com.gzhang.screener.iomodels.metamodels.ListOfScreenIndicatorGroupings;
-import com.gzhang.screener.iomodels.metamodels.SymbolList;
-import com.gzhang.screener.iomodels.metamodels.TimeInterval;
+import com.gzhang.screener.models.DailyStockData;
+import com.gzhang.screener.models.ScreenIndicator;
+import com.gzhang.screener.models.ScreenIndicatorGrouping;
+import com.gzhang.screener.models.StockMetadata;
+import com.gzhang.screener.models.iomodels.ScreenIndicatorGroupingInput;
+import com.gzhang.screener.models.iomodels.ScreenIndicatorInput;
+import com.gzhang.screener.models.metamodels.SymbolList;
+import com.gzhang.screener.models.metamodels.TimeInterval;
 import com.gzhang.screener.repositories.DailyStockDataRepository;
+import com.gzhang.screener.repositories.ScreenIndicatorGroupingRepository;
 import com.gzhang.screener.repositories.StockMetadataRepository;
+import com.gzhang.screener.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Date;
@@ -27,12 +29,56 @@ public class ScreenerController {
     @Autowired
     DailyStockDataRepository dailyStockDataRepository;
 
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    ScreenIndicatorGroupingRepository screenIndicatorGroupingRepository;
+
+    @PostMapping("/user/{userId}/save/indicator")
+    public ResponseEntity<ScreenIndicatorGrouping> saveNewIndicator(@PathVariable int userId, @RequestBody ScreenIndicatorInput screenIndicatorInput) {
+        if(!validIndicatorInput(screenIndicatorInput)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .header("Message", "Bad field input.")
+                    .body(null);
+        }
+
+        // store in grouping
+        ScreenIndicatorGrouping grouping = new ScreenIndicatorGrouping();
+        grouping.addIndicator(screenIndicatorInput.toScreenIndicator());
+        grouping.setUserId(userId);
+
+        // save and return
+        grouping = screenIndicatorGroupingRepository.save(grouping);
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Message", "Indicator created.")
+                .body(grouping);
+    }
+
+    @PostMapping("/user/{userId}/save/grouping")
+    public ResponseEntity<ScreenIndicatorGrouping> saveNewGrouping(@PathVariable int userId, @RequestBody ScreenIndicatorGroupingInput groupingInput) {
+        if(!validGroupingInput(groupingInput)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .header("Message", "Bad field input.")
+                    .body(null);
+        }
+
+        ScreenIndicatorGrouping grouping = groupingInput.toGrouping();
+        grouping.setUserId(userId);
+
+        grouping = screenIndicatorGroupingRepository.save(grouping);
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Message", "Indicator created.")
+                .body(grouping);
+    }
+
+
     @GetMapping("/screen/stocks")
-    public ResponseEntity<SymbolList> screenStocksWithPerformanceIndicators(@RequestBody ScreenIndicatorGrouping grouping) {
+    public ResponseEntity<SymbolList> screenStocksWithPerformanceIndicators(@RequestBody ScreenIndicatorGroupingInput groupingInput) {
         // sanitize input
-        if(!validGrouping(grouping)) {
+        if(!validGroupingInput(groupingInput)) {
             return ResponseEntity.status(HttpStatus.OK)
-                    .header("Status", "200: OK")
+                    .header("Message", "OK")
                     .body(new SymbolList());
         }
 
@@ -45,7 +91,7 @@ public class ScreenerController {
         // check each stock
         for(StockMetadata stock : listOfStocks) {
             // check all performance indicator
-            if(stockMeetsScreenGrouping(stock, grouping)) {
+            if(stockMeetsScreenGrouping(stock, groupingInput)) {
                 symbolList.add(stock);
                 System.out.println(stock.getTicker());
             }
@@ -56,20 +102,32 @@ public class ScreenerController {
                 .body(symbolList);
     }
 
-    private boolean stockMeetsScreenGrouping(StockMetadata stock, ScreenIndicatorGrouping screenIndicatorGrouping) {
+    private boolean stockMeetsScreenGrouping(StockMetadata stock, ScreenIndicatorGroupingInput screenIndicatorGroupingInput) {
         // check each performance indicator
-        for(ScreenIndicator screenIndicator : screenIndicatorGrouping.getScreenIndicatorList()) {
+        for(ScreenIndicatorInput screenIndicatorInput : screenIndicatorGroupingInput.getScreenIndicatorInputList()) {
             if(!stockMeetsPerformanceCriteria(stock,
-                    screenIndicator.getParameterPercentChange(),
-                    screenIndicator.getParameterTimeInterval(),
-                    screenIndicator.isParameterDirection())) return false;
+                    screenIndicatorInput.getParameterPercentChange(),
+                    screenIndicatorInput.getParameterTimeInterval(),
+                    screenIndicatorInput.isParameterDirection())) return false;
         }
 
         return true;
     }
 
-    private boolean validGrouping(ScreenIndicatorGrouping grouping) {
-        return grouping.getScreenIndicatorList() != null && grouping.getScreenIndicatorList().size() > 0;
+    private boolean validGroupingInput(ScreenIndicatorGroupingInput groupingInput) {
+        if(groupingInput.getScreenIndicatorInputList() == null || groupingInput.getScreenIndicatorInputList().size() == 0) return false;
+
+        // validate each indicator
+        for(ScreenIndicatorInput screenIndicatorInput : groupingInput.getScreenIndicatorInputList()) {
+            if(!validIndicatorInput(screenIndicatorInput)) return false;
+        }
+
+        return true;
+    }
+
+
+    private boolean validIndicatorInput(ScreenIndicatorInput screenIndicatorInput) {
+        return screenIndicatorInput != null && !screenIndicatorInput.getParameterTimeInterval().equals("");
     }
 
     private boolean stockMeetsPerformanceCriteria(StockMetadata stock, float performancePercentChange, String performanceTimeInterval, boolean performanceDirection) {

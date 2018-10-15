@@ -1,7 +1,6 @@
 package com.gzhang.screener.repositories;
 
-import com.gzhang.screener.iomodels.DailyStockData;
-import com.gzhang.screener.iomodels.StockMetadata;
+import com.gzhang.screener.models.DailyStockData;
 
 import java.util.List;
 

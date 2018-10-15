@@ -1,4 +1,4 @@
-package com.gzhang.screener.iomodels.metamodels;
+package com.gzhang.screener.models.metamodels;
 
 public enum TimeInterval {
     LATEST(0),
