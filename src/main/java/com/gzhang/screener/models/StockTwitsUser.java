@@ -21,10 +21,10 @@ public class StockTwitsUser {
     String accessToken;
     String scope;
     String username;
-/*
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId", insertable = false, updatable = false)
-    AppUser appUser;*/
+    AppUser appUser;
 
     public StockTwitsUser(int websiteGivenId, String accessToken, String scope, String username, int userId) {
         this.websiteGivenId = websiteGivenId;

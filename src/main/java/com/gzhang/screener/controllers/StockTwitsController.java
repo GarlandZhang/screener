@@ -51,6 +51,14 @@ public class StockTwitsController {
                 .body(new AccessTokenResponse(accessTokenResponse.getAccess_token()));
     }
 
+    @GetMapping("/test")
+    public String useAccessToken() {
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<Object> responseEntity = restTemplate.getForEntity("https://api.stocktwits.com/api/2/streams/all.json?access_token=fb5a1656b5a8549386c92bef94317428a5c16757",
+                                                                            Object.class);
+        return responseEntity.getBody().toString();
+    }
+
     private String getAccessTokenUrl(int userId, String code) {
         return "https://api.stocktwits.com/api/2/oauth/token?" +
                 "client_id=" + CLIENT_ID +

@@ -13,20 +13,19 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class AppUser {
+public class WatchList {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
+    int userId;
 
-    @OneToMany(fetch = FetchType.LAZY,
-            mappedBy = "appUser",
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userId", insertable = false, updatable = false)
+    AppUser appUser;
+
+    @OneToMany(fetch = FetchType.EAGER,
+            mappedBy = "watchList",
             cascade = CascadeType.ALL,
             orphanRemoval = true)
-    List<ScreenIndicatorGrouping> screenIndicatorGroupingList;
-
-    @OneToOne(fetch = FetchType.LAZY, mappedBy = "appUser", cascade = CascadeType.ALL)
-    StockTwitsUser stockTwitsUser;
-
-    @OneToOne(fetch = FetchType.LAZY, mappedBy = "appUser", cascade = CascadeType.ALL)
-    WatchList watchList;
+    List<WatchedTicker> watchedTickers;
 }
