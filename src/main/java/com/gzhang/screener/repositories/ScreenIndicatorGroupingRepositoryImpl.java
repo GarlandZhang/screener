@@ -19,4 +19,14 @@ public class ScreenIndicatorGroupingRepositoryImpl implements ScreenIndicatorGro
     public ScreenIndicatorGrouping getById(int groupId) {
         return screenIndicatorGroupingJpaRepository.findScreenIndicatorGroupingById(groupId);
     }
+
+    @Override
+    public void delete(ScreenIndicatorGrouping grouping) {
+        screenIndicatorGroupingJpaRepository.delete(grouping);
+    }
+
+    @Override
+    public void deleteById(int id) {
+        screenIndicatorGroupingJpaRepository.deleteById(id);
+    }
 }

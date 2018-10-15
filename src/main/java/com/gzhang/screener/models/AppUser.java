@@ -20,6 +20,7 @@ public class AppUser {
 
     @OneToMany(fetch = FetchType.LAZY,
             mappedBy = "appUser",
-            cascade = CascadeType.ALL)
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     List<ScreenIndicatorGrouping> screenIndicatorGroupingList;
 }

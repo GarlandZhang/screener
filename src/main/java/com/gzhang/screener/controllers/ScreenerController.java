@@ -74,6 +74,21 @@ public class ScreenerController {
                 .body(new ScreenIndicatorGroupingOutput(grouping));
     }
 
+    @GetMapping("/group/{groupId}")
+    public ResponseEntity<ScreenIndicatorGroupingOutput> getGrouping(@PathVariable int groupId) {
+
+        ScreenIndicatorGrouping grouping = screenIndicatorGroupingRepository.getById(groupId);
+
+        if(grouping == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .header("Message", "Bad field input.")
+                    .body(null);
+        }
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Message", "Group found.")
+                .body(new ScreenIndicatorGroupingOutput(grouping));
+    }
 
     @GetMapping("/group/{groupId}/screen/stocks")
     public ResponseEntity<SymbolList> screenStocksWithPerformanceIndicators(@PathVariable int groupId) {
@@ -103,6 +118,70 @@ public class ScreenerController {
         return ResponseEntity.status(HttpStatus.OK)
                 .header("Message", "OK")
                 .body(symbolList);
+    }
+
+    @PutMapping("/group/{groupId}/add/indicator")
+    public ResponseEntity<ScreenIndicatorGroupingOutput> addIndicatorToGrouping(@PathVariable int groupId, @RequestBody ScreenIndicatorInput indicatorInput) {
+        if(!validIndicatorInput(indicatorInput)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .header("Message", "Bad field input.")
+                    .body(null);
+        }
+
+        ScreenIndicatorGrouping grouping = screenIndicatorGroupingRepository.getById(groupId);
+
+        if(grouping == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .header("Message", "Bad field input.")
+                    .body(null);
+        }
+
+        grouping.addIndicator(indicatorInput.toScreenIndicator());
+        grouping = screenIndicatorGroupingRepository.save(grouping);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .header("Message", "Added indicator")
+                .body(new ScreenIndicatorGroupingOutput(grouping));
+    }
+
+    @PutMapping("/group/{groupId}/remove/indicator/{indicatorId}")
+    public ResponseEntity<ScreenIndicatorGroupingOutput> removeIndicatorToGrouping(@PathVariable int groupId, @PathVariable int indicatorId) {
+        ScreenIndicatorGrouping grouping = screenIndicatorGroupingRepository.getById(groupId);
+
+        if(grouping == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .header("Message", "Bad field input.")
+                    .body(null);
+        }
+
+        // check if removing indicator is not possible
+        if(!grouping.removeIndicatorById(indicatorId)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .header("Message", "Bad field input.")
+                    .body(new ScreenIndicatorGroupingOutput(grouping));
+        };
+
+        // check if size is now 0
+        if(grouping.getScreenIndicatorList().size() == 0) {
+            screenIndicatorGroupingRepository.delete(grouping);
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .header("Message", "Group is now empty. Group deleted.")
+                    .body(new ScreenIndicatorGroupingOutput());
+        }
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Message", "Added indicator")
+                .body(new ScreenIndicatorGroupingOutput(grouping));
+    }
+
+    @DeleteMapping("/group/{groupId}")
+    public ResponseEntity<String> deleteGrouping(@PathVariable int groupId) {
+        screenIndicatorGroupingRepository.deleteById(groupId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Message", "Deleted group")
+                .body(null);
     }
 
     private boolean stockMeetsScreenGrouping(StockMetadata stock, ScreenIndicatorGrouping screenIndicatorGrouping) {

@@ -22,7 +22,8 @@ public class ScreenIndicatorGrouping {
 
     @OneToMany(fetch = FetchType.EAGER,
             mappedBy = "screenIndicatorGrouping",
-            cascade = CascadeType.ALL)
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     List<ScreenIndicator> screenIndicatorList;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -34,5 +35,16 @@ public class ScreenIndicatorGrouping {
 
         screenIndicator.setGroupId(id);
         screenIndicatorList.add(screenIndicator);
+    }
+
+    public boolean removeIndicatorById(int indicatorId) {
+        for(int i = 0; i < screenIndicatorList.size(); ++i) {
+            if(screenIndicatorList.get(i).getId() == indicatorId) {
+                screenIndicatorList.remove(i);
+                return true;
+            }
+        }
+
+        return false;
     }
 }
