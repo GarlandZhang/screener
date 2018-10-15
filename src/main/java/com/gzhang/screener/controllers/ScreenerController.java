@@ -5,6 +5,7 @@ import com.gzhang.screener.models.ScreenIndicator;
 import com.gzhang.screener.models.ScreenIndicatorGrouping;
 import com.gzhang.screener.models.StockMetadata;
 import com.gzhang.screener.models.iomodels.ScreenIndicatorGroupingInput;
+import com.gzhang.screener.models.iomodels.ScreenIndicatorGroupingOutput;
 import com.gzhang.screener.models.iomodels.ScreenIndicatorInput;
 import com.gzhang.screener.models.metamodels.SymbolList;
 import com.gzhang.screener.models.metamodels.TimeInterval;
@@ -36,7 +37,7 @@ public class ScreenerController {
     ScreenIndicatorGroupingRepository screenIndicatorGroupingRepository;
 
     @PostMapping("/user/{userId}/save/indicator")
-    public ResponseEntity<ScreenIndicatorGrouping> saveNewIndicator(@PathVariable int userId, @RequestBody ScreenIndicatorInput screenIndicatorInput) {
+    public ResponseEntity<ScreenIndicatorGroupingOutput> saveNewIndicator(@PathVariable int userId, @RequestBody ScreenIndicatorInput screenIndicatorInput) {
         if(!validIndicatorInput(screenIndicatorInput)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .header("Message", "Bad field input.")
@@ -52,11 +53,11 @@ public class ScreenerController {
         grouping = screenIndicatorGroupingRepository.save(grouping);
         return ResponseEntity.status(HttpStatus.OK)
                 .header("Message", "Indicator created.")
-                .body(grouping);
+                .body(new ScreenIndicatorGroupingOutput(grouping));
     }
 
     @PostMapping("/user/{userId}/save/grouping")
-    public ResponseEntity<ScreenIndicatorGrouping> saveNewGrouping(@PathVariable int userId, @RequestBody ScreenIndicatorGroupingInput groupingInput) {
+    public ResponseEntity<ScreenIndicatorGroupingOutput> saveNewGrouping(@PathVariable int userId, @RequestBody ScreenIndicatorGroupingInput groupingInput) {
         if(!validGroupingInput(groupingInput)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .header("Message", "Bad field input.")
@@ -69,7 +70,7 @@ public class ScreenerController {
         grouping = screenIndicatorGroupingRepository.save(grouping);
         return ResponseEntity.status(HttpStatus.OK)
                 .header("Message", "Indicator created.")
-                .body(grouping);
+                .body(new ScreenIndicatorGroupingOutput(grouping));
     }
 
 

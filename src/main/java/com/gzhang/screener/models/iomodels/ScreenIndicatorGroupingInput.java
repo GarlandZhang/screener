@@ -24,5 +24,7 @@ public class ScreenIndicatorGroupingInput {
         for(ScreenIndicatorInput screenIndicatorInput : screenIndicatorInputList) {
             screenIndicatorGrouping.addIndicator(screenIndicatorInput.toScreenIndicator());
         }
+
+        return screenIndicatorGrouping;
     }
 }
