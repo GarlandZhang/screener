@@ -5,12 +5,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TimeSeriesEntryList {
-    List<TimeSeriesEntry> timeSeriesEntries;
+public class MetaData {
+    String information;
+    String symbol;
+    String lastRefreshed;
+    String outputSize;
+    String timeZone;
 }
