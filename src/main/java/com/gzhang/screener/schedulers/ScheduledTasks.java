@@ -7,6 +7,7 @@ import com.gzhang.screener.models.metamodels.MetaData;
 import com.gzhang.screener.models.metamodels.TimeEntry;
 import com.gzhang.screener.repositories.DailyStockDataRepository;
 import com.gzhang.screener.repositories.StockMetadataRepository;
+import io.swagger.models.auth.In;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.sql.Date;
 import java.sql.Time;
 import java.text.ParseException;
@@ -27,7 +27,8 @@ import java.util.Scanner;
 
 @Component
 public class ScheduledTasks {
-    
+
+    private static final int NUM_STOCKS = 6608;
     @Autowired
     StockMetadataRepository stockMetadataRepository;
 
@@ -38,13 +39,18 @@ public class ScheduledTasks {
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     private static final String API_KEY = "RD164SI5XMGA32WL";
 
+    private static final int MAX_FAILS = 5;
+    private static int numFailedAttempts;
     private static boolean successApiCall;
     private static String tickerSymbol;
     private static Scanner sc;
+    private static int tickerIndex;
 
     public ScheduledTasks() {
         successApiCall = true;
         tickerSymbol = "";
+        numFailedAttempts = 0;
+        tickerIndex = 0;
     }
 
     // ideal: "*/15 * 9-16 * * MON-FRI"
@@ -56,6 +62,7 @@ public class ScheduledTasks {
 
         if(successApiCall) {
             tickerSymbol = sc.nextLine();
+            numFailedAttempts = 0;
         }
 
 
@@ -73,6 +80,18 @@ public class ScheduledTasks {
         } else {
             addNewestEntries(stockMetadata, alphavantageObject.getTimeEntries());
             System.out.println("updated: " + stockMetadata.getTicker());
+        }
+
+        writeNewTickerIndex();
+    }
+
+    private void writeNewTickerIndex() {
+        try {
+            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File("./src/main/resources/ticker-index.txt")));
+            bufferedWriter.write((++tickerIndex) % NUM_STOCKS);
+            bufferedWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -141,7 +160,14 @@ public class ScheduledTasks {
             return alphavantageObject;
         } catch(Exception e) {
             e.printStackTrace();
-            successApiCall = false;
+            if(numFailedAttempts == MAX_FAILS) {
+                successApiCall = true;
+                numFailedAttempts = 0;
+            }
+            else {
+                ++numFailedAttempts;
+                successApiCall = false;
+            }
             return null;
         }
     }
@@ -154,6 +180,16 @@ public class ScheduledTasks {
 
         if(sc == null) {
             sc = new Scanner(new File("./src/main/resources/stock-tickers.txt"));
+
+            // get ticker index in file
+            tickerIndex = getTickerIndex();
+            for(int i = tickerIndex; i > 1; --i) sc.nextLine(); // i > 1 instead of i > 0 because check make sure previous entry is clean
         }
+    }
+
+    private int getTickerIndex() throws FileNotFoundException {
+        Scanner sc = new Scanner(new File("./src/main/resources/ticker-index.txt"));
+        int tickerIndex = Integer.parseInt(sc.nextLine());
+        return tickerIndex;
     }
 }

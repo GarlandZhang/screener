@@ -1,5 +1,6 @@
 package com.gzhang.screener.models.metamodels;
 
+import com.gzhang.screener.models.DailyStockData;
 import com.gzhang.screener.models.StockMetadata;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,13 +24,15 @@ public class AlphavantageObject {
 
     public StockMetadata toStockMetadata() {
         StockMetadata stockMetadata = new StockMetadata();
-        stockMetadata.setDailyStockDataList(new ArrayList<>());
+
+        List<DailyStockData> dailyStockDataList = new ArrayList<>();
         stockMetadata.setTicker(metaData.getSymbol());
 
         for(TimeEntry timeEntry : timeEntries) {
-            stockMetadata.getDailyStockDataList().add(timeEntry.toDailyStockData());
+            dailyStockDataList.add(timeEntry.toDailyStockData());
         }
 
+        stockMetadata.setDailyStockDataList(dailyStockDataList);
         return stockMetadata;
     }
 }
