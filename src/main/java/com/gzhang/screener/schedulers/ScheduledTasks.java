@@ -2,12 +2,12 @@ package com.gzhang.screener.schedulers;
 
 import com.gzhang.screener.models.DailyStockData;
 import com.gzhang.screener.models.StockMetadata;
-import com.gzhang.screener.models.metamodels.AlphavantageObject;
+import com.gzhang.screener.models.metamodels.AlphavantageStockHistory;
+import com.gzhang.screener.models.metamodels.AlphavantageStockQuote;
 import com.gzhang.screener.models.metamodels.MetaData;
 import com.gzhang.screener.models.metamodels.TimeEntry;
 import com.gzhang.screener.repositories.DailyStockDataRepository;
 import com.gzhang.screener.repositories.StockMetadataRepository;
-import io.swagger.models.auth.In;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +18,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.sql.Date;
-import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Scanner;
@@ -66,36 +66,43 @@ public class ScheduledTasks {
         }
 
 
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<Object> responseEntity = restTemplate.getForEntity(getAlphavantageUrl(tickerSymbol), Object.class);
+        AlphavantageStockHistory alphavantageStockHistory = getStockHistory(tickerSymbol);
+        if(alphavantageStockHistory == null) return;
 
-        AlphavantageObject alphavantageObject = getAlphavantageObject((LinkedHashMap<String, LinkedHashMap>) responseEntity.getBody());
-        if(alphavantageObject == null) return;
-
-        StockMetadata stockMetadata = stockMetadataRepository.getByTickerSymbol(alphavantageObject.getMetaData().getSymbol());
+        StockMetadata stockMetadata = stockMetadataRepository.getByTickerSymbol(alphavantageStockHistory.getMetaData().getSymbol());
         if(stockMetadata == null) {
-            stockMetadata = alphavantageObject.toStockMetadata();
-            stockMetadataRepository.save(stockMetadata);
+            stockMetadata = getStockMetadata(alphavantageStockHistory);
             System.out.println("added: " + stockMetadata.getTicker());
         } else {
-            addNewestEntries(stockMetadata, alphavantageObject.getTimeEntries());
+            addNewestEntries(stockMetadata, alphavantageStockHistory.getTimeEntries());
             System.out.println("updated: " + stockMetadata.getTicker());
         }
 
         writeNewTickerIndex();
     }
 
+    private StockMetadata getStockMetadata(AlphavantageStockHistory alphavantageStockHistory) {
+        StockMetadata stockMetadata= new StockMetadata();
+        stockMetadata.setTicker(alphavantageStockHistory.getMetaData().getSymbol());
+        stockMetadata = stockMetadataRepository.save(stockMetadata);
+        stockMetadata.setDailyStockDataList(new ArrayList<>());
+        for(TimeEntry timeEntry : alphavantageStockHistory.getTimeEntries()) {
+            stockMetadata.getDailyStockDataList().add(timeEntry.toDailyStockData(stockMetadata.getId()));
+        }
+        return stockMetadataRepository.save(stockMetadata);
+    }
+
     private void writeNewTickerIndex() {
         try {
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File("./src/main/resources/ticker-index.txt")));
-            bufferedWriter.write((++tickerIndex) % NUM_STOCKS);
+            bufferedWriter.write("" + (++tickerIndex) % NUM_STOCKS);
             bufferedWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private String getAlphavantageUrl(String tickerSymbol) {
+    private String getStockHistoryUrl(String tickerSymbol) {
         return "https://www.alphavantage.co/query?" +
                 "function=TIME_SERIES_DAILY" +
                 "&symbol=" + tickerSymbol +
@@ -106,6 +113,7 @@ public class ScheduledTasks {
     private void addNewestEntries(StockMetadata stockMetadata, List<TimeEntry> timeEntries) {
         // get latest entries in reverse chronological order
         List<DailyStockData> dailyStockDataList = dailyStockDataRepository.getDailyStockDataByMetadataId(stockMetadata.getId());
+        if(dailyStockDataList == null || dailyStockDataList.size() == 0) return; // this should not occur but just in case
 
         DailyStockData mostUpdatedEntry = dailyStockDataList.get(0);
 
@@ -120,11 +128,13 @@ public class ScheduledTasks {
         }
     }
 
-
-    private AlphavantageObject getAlphavantageObject(LinkedHashMap<String, LinkedHashMap> body) {
+    private AlphavantageStockHistory getStockHistory(String tickerSymbol) {
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<Object> responseEntity = restTemplate.getForEntity(getStockHistoryUrl(tickerSymbol), Object.class);
+        LinkedHashMap<String, LinkedHashMap> body = (LinkedHashMap<String, LinkedHashMap>) responseEntity.getBody();
 
         try{
-            AlphavantageObject alphavantageObject = new AlphavantageObject();
+            AlphavantageStockHistory alphavantageStockHistory = new AlphavantageStockHistory();
 
             // handle cases where I do not successfuly get the stock due to non-existing or api call limit
             if(body.get("Error Message") != null) return null;
@@ -138,7 +148,7 @@ public class ScheduledTasks {
             String outputSize = (String) body.get("Meta Data").get("4. Output Size");
             String timeZone = (String) body.get("Meta Data").get("5. Time Zone");
 
-            alphavantageObject.setMetaData(new MetaData(info, symbol, lastRefreshed, outputSize, timeZone));
+            alphavantageStockHistory.setMetaData(new MetaData(info, symbol, lastRefreshed, outputSize, timeZone));
 
             // this is hardcoded for now... I can later make it more dynamic to search keys and check if this is INTRA_DAY vs DAILY
             body.get("Time Series (Daily)").forEach((dateEntry, timeEntry) -> {
@@ -154,10 +164,10 @@ public class ScheduledTasks {
                 float closePrice = Float.parseFloat(((LinkedHashMap<String, String>)timeEntry).get("4. close"));
                 long volume = Long.parseLong(((LinkedHashMap<String, String>) timeEntry).get("5. volume"));
 
-                alphavantageObject.getTimeEntries().add(new TimeEntry(date, openPrice, highPrice, lowPrice, closePrice, volume));
+                alphavantageStockHistory.getTimeEntries().add(new TimeEntry(date, openPrice, highPrice, lowPrice, closePrice, volume));
             });
             successApiCall = true;
-            return alphavantageObject;
+            return alphavantageStockHistory;
         } catch(Exception e) {
             e.printStackTrace();
             if(numFailedAttempts == MAX_FAILS) {
@@ -170,6 +180,49 @@ public class ScheduledTasks {
             }
             return null;
         }
+    }
+
+    public static AlphavantageStockQuote getStockQuote(String tickerSymbol) {
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<Object> responseEntity = restTemplate.getForEntity(getStockQuoteUrl(tickerSymbol), Object.class);
+        LinkedHashMap<String, LinkedHashMap> body = (LinkedHashMap<String, LinkedHashMap>) responseEntity.getBody();
+        AlphavantageStockQuote quote = null;
+        try {
+            if(body.get("Error Message") != null || body.get("Information") != null) return null;
+
+            LinkedHashMap<String, String> globalQuote = body.get("Global Quote");
+            String symbol = globalQuote.get("01. symbol");
+            float openPrice = Float.parseFloat(globalQuote.get("02. open"));
+            float highPrice = Float.parseFloat(globalQuote.get("03. high"));
+            float lowPrice = Float.parseFloat(globalQuote.get("04. low"));
+            float price = Float.parseFloat(globalQuote.get("05. price"));
+            long volume = Long.parseLong(globalQuote.get("06. volume"));
+            Date date = new Date(dateFormat.parse((String)globalQuote.get("07. latest trading day")).getTime());
+            float previousClose = Float.parseFloat(globalQuote.get("08. previous close"));
+            float change = Float.parseFloat(globalQuote.get("09. change"));
+            float changePercent = Float.parseFloat(globalQuote.get("10. change percent").replace("%", ""));
+
+            quote = new AlphavantageStockQuote(symbol,
+                    openPrice,
+                    highPrice,
+                    lowPrice,
+                    price,
+                    volume,
+                    date,
+                    previousClose,
+                    change,
+                    changePercent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return quote;
+    }
+
+    private static String getStockQuoteUrl(String tickerSymbol) {
+        return "https://www.alphavantage.co/query?" +
+                "function=GLOBAL_QUOTE" +
+                "&symbol=" + tickerSymbol +
+                "&apikey=" + API_KEY;
     }
 
     private void refreshScanner() throws FileNotFoundException {

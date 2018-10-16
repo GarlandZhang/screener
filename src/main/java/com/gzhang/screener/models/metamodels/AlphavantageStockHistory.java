@@ -13,26 +13,26 @@ import java.util.List;
 @Getter
 @Setter
 @AllArgsConstructor
-public class AlphavantageObject {
+public class AlphavantageStockHistory {
     MetaData metaData;
     List<TimeEntry> timeEntries;
 
-    public AlphavantageObject() {
+    public AlphavantageStockHistory() {
         metaData = new MetaData();
         timeEntries = new ArrayList<>();
     }
-
-    public StockMetadata toStockMetadata() {
+/*
+    public StockMetadata toStockMetadata(int id) {
         StockMetadata stockMetadata = new StockMetadata();
 
         List<DailyStockData> dailyStockDataList = new ArrayList<>();
         stockMetadata.setTicker(metaData.getSymbol());
 
         for(TimeEntry timeEntry : timeEntries) {
-            dailyStockDataList.add(timeEntry.toDailyStockData());
+            dailyStockDataList.add(timeEntry.toDailyStockData(id));
         }
 
         stockMetadata.setDailyStockDataList(dailyStockDataList);
         return stockMetadata;
-    }
+    }*/
 }

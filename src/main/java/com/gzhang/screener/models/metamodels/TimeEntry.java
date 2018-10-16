@@ -31,4 +31,10 @@ public class TimeEntry {
 
         return dailyStockData;
     }
+
+    public DailyStockData toDailyStockData(int id) {
+        DailyStockData data = toDailyStockData();
+        data.setMetadataId(id);
+        return data;
+    }
 }
