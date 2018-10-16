@@ -126,13 +126,6 @@ public class StockTwitsController {
                 "&code=" + code +
                 "&grant_type=authorization_code" +
                 "&redirect_uri=" + APP_URL + userId;
-
-        //        return "https://api.stocktwits.com/api/2/oauth/token?" +
-        //                "client_id=" + CLIENT_ID +
-        //                "&client_secret=" + CLIENT_SECRET +
-        //                "&code=" + code +
-        //                "&grant_type=authorization_code" +
-        //                "&redirect_uri=http://localtest.me:8080/test;"
     }
 
     private RequestForAccessTokenResponse getAccessToken(int userId, String code) {
