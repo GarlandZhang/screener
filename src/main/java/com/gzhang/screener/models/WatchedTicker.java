@@ -9,8 +9,8 @@ import javax.persistence.*;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
 public class WatchedTicker {
     @Id
@@ -18,8 +18,14 @@ public class WatchedTicker {
     int id;
     int watchListId;
     String ticker;
+    String title;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "watchListId", insertable = false, updatable = false)
     WatchList watchList;
+
+    public WatchedTicker(String ticker, String title) {
+        this.ticker = ticker;
+        this.title = title;
+    }
 }

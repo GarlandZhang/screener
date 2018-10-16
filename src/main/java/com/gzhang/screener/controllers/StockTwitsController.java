@@ -2,8 +2,10 @@ package com.gzhang.screener.controllers;
 
 import com.gzhang.screener.models.AppUser;
 import com.gzhang.screener.models.StockTwitsUser;
-import com.gzhang.screener.models.iomodels.AccessTokenResponse;
-import com.gzhang.screener.models.iomodels.RequestForAccessTokenResponse;
+import com.gzhang.screener.models.WatchList;
+import com.gzhang.screener.models.WatchedTicker;
+import com.gzhang.screener.models.iomodels.*;
+import com.gzhang.screener.models.metamodels.StockTwitsWatchListResponse;
 import com.gzhang.screener.repositories.StockTwitsUserRepository;
 import com.gzhang.screener.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,11 +14,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 public class StockTwitsController {
 
     @Autowired
     StockTwitsUserRepository stockTwitsUserRepository;
+
+    @Autowired
+    UserRepository userRepository;
 
     final String CLIENT_ID="d1b3de24ed05b9c5";
     final String APP_URL="http://localtest.me:8080/stock-twits/oauth/response/user/";
@@ -51,12 +59,64 @@ public class StockTwitsController {
                 .body(new AccessTokenResponse(accessTokenResponse.getAccess_token()));
     }
 
-    @GetMapping("/test")
-    public String useAccessToken() {
+    @GetMapping("/stock-twits/watchlist/user/{userId}")
+    public ResponseEntity<WatchListOutput> importWatchList(@PathVariable int userId) {
+        // get access token
+        AppUser appUser = userRepository.getUserById(userId);
+        String accessToken = appUser.getStockTwitsUser().getAccessToken();
+
+        // only handling 1 watchlist for now
+        // check if details url is working
+        String watchListDetailsUrl = getWatchListDetailsUrl(userId, accessToken);
+        if(watchListDetailsUrl.equals("")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .header("Message", "No watchlist extracted.")
+                    .body(new WatchListOutput(appUser.getWatchList()));
+        }
+
+        // extract list of tickers, store in user and save
+        if(appUser.getWatchList() == null) appUser.setWatchList(new WatchList());
+        appUser.getWatchList().addTickers(getTickersFromWatchlist(watchListDetailsUrl));
+        userRepository.save(appUser);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Message", "Watchlist retrieved")
+                .body(new WatchListOutput(appUser.getWatchList()));
+    }
+
+    private List<WatchedTicker> getTickersFromWatchlist(String watchListDetailsUrl) {
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<Object> responseEntity = restTemplate.getForEntity("https://api.stocktwits.com/api/2/streams/all.json?access_token=fb5a1656b5a8549386c92bef94317428a5c16757",
-                                                                            Object.class);
-        return responseEntity.getBody().toString();
+        ResponseEntity<StockTwitsWatchListShowResponse> responseEntity
+                = restTemplate.getForEntity(watchListDetailsUrl, StockTwitsWatchListShowResponse.class);
+
+        return responseEntity.getBody().standardizeWatchList();
+    }
+
+    private String getWatchListDetailsUrl(int userId, String accessToken) {
+        String watchListUrl = getWatchListUrl(userId, accessToken);
+        int watchListId = getWatchListId(watchListUrl);
+        if(watchListId == -1) return "";
+
+        return "https://api.stocktwits.com/api/2/watchlists/show/"
+                + watchListId
+                + ".json?"
+                + "access_token="
+                + accessToken;
+    }
+
+    private int getWatchListId(String watchListUrl) {
+        // make GET request
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<StockTwitsWatchListsResponse> responseEntity =
+                restTemplate.getForEntity(watchListUrl, StockTwitsWatchListsResponse.class);
+
+        if(responseEntity.getBody().getWatchlists().size() == 0) return -1;
+        return responseEntity.getBody().getWatchlists().get(0).getId();
+    }
+
+    private String getWatchListUrl(int userId, String accessToken) {
+        return "https://api.stocktwits.com/api/2/watchlists.json?" +
+                "access_token=" + accessToken;
     }
 
     private String getAccessTokenUrl(int userId, String code) {
