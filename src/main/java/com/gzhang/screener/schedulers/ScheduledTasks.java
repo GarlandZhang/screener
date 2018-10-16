@@ -1,10 +1,15 @@
 package com.gzhang.screener.schedulers;
 
+import com.gzhang.screener.models.DailyStockData;
+import com.gzhang.screener.models.StockMetadata;
 import com.gzhang.screener.models.metamodels.AlphavantageObject;
 import com.gzhang.screener.models.metamodels.MetaData;
 import com.gzhang.screener.models.metamodels.TimeEntry;
+import com.gzhang.screener.repositories.DailyStockDataRepository;
+import com.gzhang.screener.repositories.StockMetadataRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -13,13 +18,22 @@ import org.springframework.web.client.RestTemplate;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.sql.Date;
+import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Scanner;
 
 @Component
 public class ScheduledTasks {
+    
+    @Autowired
+    StockMetadataRepository stockMetadataRepository;
+
+    @Autowired
+    DailyStockDataRepository dailyStockDataRepository;
+    
     private static final Logger log = LoggerFactory.getLogger(ScheduledTasks.class);
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -48,10 +62,34 @@ public class ScheduledTasks {
 
         AlphavantageObject alphavantageObject = getAlphavantageObject((LinkedHashMap<String, LinkedHashMap>) responseEntity.getBody());
 
-
+        StockMetadata stockMetadata = stockMetadataRepository.getByTickerSymbol(alphavantageObject.getMetaData().getSymbol());
+        if(stockMetadata == null) {
+            stockMetadata = alphavantageObject.toStockMetadata();
+            stockMetadataRepository.save(stockMetadata);
+        } else {
+            addNewestEntries(stockMetadata, alphavantageObject.getTimeEntries());
+        }
 
         ++index;
     }
+
+    private void addNewestEntries(StockMetadata stockMetadata, List<TimeEntry> timeEntries) {
+        // get latest entries in reverse chronological order
+        List<DailyStockData> dailyStockDataList = dailyStockDataRepository.getDailyStockDataByMetadataId(stockMetadata.getId());
+
+        DailyStockData mostUpdatedEntry = dailyStockDataList.get(0);
+
+        // ensures only latest entries are added
+        for(TimeEntry timeEntry : timeEntries) {
+            if(timeEntry.getDate().getTime() > mostUpdatedEntry.getDateCreated().getTime()) {
+                DailyStockData dailyStockData = timeEntry.toDailyStockData();
+                dailyStockData.setMetadataId(stockMetadata.getId());
+                dailyStockDataRepository.save(timeEntry.toDailyStockData());
+            }
+            else break;
+        }
+    }
+
 
     private AlphavantageObject getAlphavantageObject(LinkedHashMap<String, LinkedHashMap> body) {
         AlphavantageObject alphavantageObject = new AlphavantageObject();

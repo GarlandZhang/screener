@@ -1,5 +1,6 @@
 package com.gzhang.screener.models.metamodels;
 
+import com.gzhang.screener.models.StockMetadata;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,5 +19,17 @@ public class AlphavantageObject {
     public AlphavantageObject() {
         metaData = new MetaData();
         timeEntries = new ArrayList<>();
+    }
+
+    public StockMetadata toStockMetadata() {
+        StockMetadata stockMetadata = new StockMetadata();
+        stockMetadata.setDailyStockDataList(new ArrayList<>());
+        stockMetadata.setTicker(metaData.getSymbol());
+
+        for(TimeEntry timeEntry : timeEntries) {
+            stockMetadata.getDailyStockDataList().add(timeEntry.toDailyStockData());
+        }
+
+        return stockMetadata;
     }
 }

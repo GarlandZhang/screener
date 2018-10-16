@@ -1,11 +1,12 @@
 package com.gzhang.screener.models.metamodels;
 
+import com.gzhang.screener.models.DailyStockData;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
+import java.sql.Date;
 
 @Getter
 @Setter
@@ -18,4 +19,16 @@ public class TimeEntry {
     float lowPrice;
     float closePrice;
     long volume;
+
+    public DailyStockData toDailyStockData() {
+        DailyStockData dailyStockData = new DailyStockData();
+        dailyStockData.setDateCreated(date);
+        dailyStockData.setOpenPrice(openPrice);
+        dailyStockData.setClosePrice(closePrice);
+        dailyStockData.setHighPrice(highPrice);
+        dailyStockData.setLowPrice(lowPrice);
+        dailyStockData.setVolume(volume);
+
+        return dailyStockData;
+    }
 }
