@@ -107,6 +107,12 @@ public class ScheduledTasks {
         try{
             AlphavantageObject alphavantageObject = new AlphavantageObject();
 
+            // handle cases where I do not successfuly get the stock due to non-existing or api call limit
+            if(body.get("Error Message") != null) return null;
+            if(body.get("Information") != null) {
+                successApiCall = false;
+                return null;
+            }
             String info = (String) body.get("Meta Data").get("1. Information");
             String symbol = (String) body.get("Meta Data").get("2. Symbol");
             String lastRefreshed = (String) body.get("Meta Data").get("3. Last Refreshed");
