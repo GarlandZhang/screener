@@ -220,45 +220,42 @@ public class ScreenerController {
 
         // get entries to compare for meeting performance criteria
         DailyStockData latestDayEntry = getDayEntry(dailyStockData, "LATEST");
-        DailyStockData performance1DayEntry = getDayEntry(dailyStockData, performanceTimeInterval);
+        DailyStockData performanceDayEntry = getDayEntry(dailyStockData, performanceTimeInterval);
 
-        return dayEntryMeetsCriteria(latestDayEntry, performance1DayEntry, performancePercentChange, performanceDirection);
+        return dayEntryMeetsCriteria(latestDayEntry, performanceDayEntry, performancePercentChange, performanceDirection);
     }
 
     private boolean dayEntryMeetsCriteria(DailyStockData latestDayEntry, DailyStockData performanceDayEntry, float performancePercentChange, boolean performanceDirection) {
-        // compares close price of latest entry to open price of timeEntry
+        // compares close price of latest entry to close price of timeEntry
         // true -> above percentage
         float change = (latestDayEntry.getClosePrice()
-                - performanceDayEntry.getOpenPrice())
+                - performanceDayEntry.getClosePrice())
                         / performanceDayEntry.getOpenPrice();
+
+        if(latestDayEntry.getStockMetadata().getTicker().equals("ABEOW")) {
+            System.out.println();
+        }
+
         return performanceDirection ? change >= (performancePercentChange / 100.00) :
                                       change <= (performancePercentChange / 100.00);
     }
 
     private DailyStockData getDayEntry(List<DailyStockData> dailyStockDataList, String timeIntervalField) {
         TimeInterval timeInterval = getTimeIntervalFromField(timeIntervalField);
-        if(timeInterval == TimeInterval.LATEST) return dailyStockDataList.get(0);
-        if(timeInterval == TimeInterval.PAST_THREE_DAYS) {
-            // get latest date
-            Date latestDate = getDayEntry(dailyStockDataList, "LATEST").getDateCreated();
-            DailyStockData candidate = dailyStockDataList.get(0);
 
-            // get closest dataEntry to the time interval
-            for(DailyStockData dailyStockData : dailyStockDataList) {
-                if(withinTimeInterval(dailyStockData.getDateCreated(), latestDate, timeInterval)) candidate = dailyStockData;
-                else break;
-            }
+        // get latest date
+        Date latestDate = dailyStockDataList.get(0).getDateCreated();
+        DailyStockData candidate = null;
 
-            return candidate;
-        }
-        if(timeInterval == TimeInterval.PAST_WEEK) {
-            // do something
+        // get closest dataEntry to the time interval
+        for(DailyStockData dailyStockData : dailyStockDataList) {
+            if(withinTimeInterval(dailyStockData.getDateCreated(), latestDate, timeInterval) || candidate == null) candidate = dailyStockData;
+            else break;
         }
 
-        // more fields TODO
+        if(candidate == null) return dailyStockDataList.get(0);
+        return candidate;
 
-        // temporary until more fields
-        return getDayEntry(dailyStockDataList, "LATEST");
     }
 
     private boolean withinTimeInterval(Date dateEntry, Date latestDate, TimeInterval timeInterval) {
@@ -269,6 +266,7 @@ public class ScreenerController {
 
     private TimeInterval getTimeIntervalFromField(String timeIntervalField) {
         if(timeIntervalField.equals("LATEST")) return TimeInterval.LATEST;
+        if(timeIntervalField.equals("PAST DAY")) return TimeInterval.PAST_DAY;
         if(timeIntervalField.equals("PAST THREE DAYS")) return TimeInterval.PAST_THREE_DAYS;
         if(timeIntervalField.equals("PAST WEEK")) return TimeInterval.PAST_WEEK;
 

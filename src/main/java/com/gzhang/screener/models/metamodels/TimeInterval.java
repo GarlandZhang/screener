@@ -2,7 +2,7 @@ package com.gzhang.screener.models.metamodels;
 
 public enum TimeInterval {
     LATEST(0),
-    PAST_DAY(0),
+    PAST_DAY(86400000),
     PAST_THREE_DAYS(172800000),
     PAST_WEEK(604800000),
     ;
