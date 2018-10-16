@@ -36,41 +36,52 @@ public class ScheduledTasks {
     
     private static final Logger log = LoggerFactory.getLogger(ScheduledTasks.class);
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    private static final String API_KEY = "RD164SI5XMGA32WL";
 
-    private static int index;
+    private static boolean successApiCall;
+    private static String tickerSymbol;
     private static Scanner sc;
 
     public ScheduledTasks() {
-        index = 0;
+        successApiCall = true;
+        tickerSymbol = "";
     }
 
-    // ideal: "*/10 * 9-16 * * MON-FRI"
+    // ideal: "*/15 * 9-16 * * MON-FRI"
     @Scheduled(cron = "*/15 * * * * MON-FRI")
     public void getStockData() throws FileNotFoundException {
         refreshScanner();
 
-        String tickerSymbol = sc.nextLine();
+        // get ticker symbol from file
+
+        if(successApiCall) {
+            tickerSymbol = sc.nextLine();
+        }
+
 
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<Object> responseEntity = restTemplate.getForEntity("https://www.alphavantage.co/query?" +
-                "function=TIME_SERIES_DAILY" +
-                "&symbol=" + tickerSymbol +
-                "&outputsize=full" +
-                "&apikey=RD164SI5XMGA32WL", Object.class);
-
-        System.out.println(responseEntity.getBody().toString());
+        ResponseEntity<Object> responseEntity = restTemplate.getForEntity(getAlphavantageUrl(tickerSymbol), Object.class);
 
         AlphavantageObject alphavantageObject = getAlphavantageObject((LinkedHashMap<String, LinkedHashMap>) responseEntity.getBody());
+        if(alphavantageObject == null) return;
 
         StockMetadata stockMetadata = stockMetadataRepository.getByTickerSymbol(alphavantageObject.getMetaData().getSymbol());
         if(stockMetadata == null) {
             stockMetadata = alphavantageObject.toStockMetadata();
             stockMetadataRepository.save(stockMetadata);
+            System.out.println("added: " + stockMetadata.getTicker());
         } else {
             addNewestEntries(stockMetadata, alphavantageObject.getTimeEntries());
+            System.out.println("updated: " + stockMetadata.getTicker());
         }
+    }
 
-        ++index;
+    private String getAlphavantageUrl(String tickerSymbol) {
+        return "https://www.alphavantage.co/query?" +
+                "function=TIME_SERIES_DAILY" +
+                "&symbol=" + tickerSymbol +
+                "&outputsize=full" +
+                "&apikey=" + API_KEY;
     }
 
     private void addNewestEntries(StockMetadata stockMetadata, List<TimeEntry> timeEntries) {
@@ -92,34 +103,41 @@ public class ScheduledTasks {
 
 
     private AlphavantageObject getAlphavantageObject(LinkedHashMap<String, LinkedHashMap> body) {
-        AlphavantageObject alphavantageObject = new AlphavantageObject();
 
-        String info = (String) body.get("Meta Data").get("1. Information");
-        String symbol = (String) body.get("Meta Data").get("2. Symbol");
-        String lastRefreshed = (String) body.get("Meta Data").get("3. Last Refreshed");
-        String outputSize = (String) body.get("Meta Data").get("4. Output Size");
-        String timeZone = (String) body.get("Meta Data").get("5. Time Zone");
+        try{
+            AlphavantageObject alphavantageObject = new AlphavantageObject();
 
-        alphavantageObject.setMetaData(new MetaData(info, symbol, lastRefreshed, outputSize, timeZone));
+            String info = (String) body.get("Meta Data").get("1. Information");
+            String symbol = (String) body.get("Meta Data").get("2. Symbol");
+            String lastRefreshed = (String) body.get("Meta Data").get("3. Last Refreshed");
+            String outputSize = (String) body.get("Meta Data").get("4. Output Size");
+            String timeZone = (String) body.get("Meta Data").get("5. Time Zone");
 
-        // this is hardcoded for now... I can later make it more dynamic to search keys and check if this is INTRA_DAY vs DAILY
-        body.get("Time Series (Daily)").forEach((dateEntry, timeEntry) -> {
-            Date date = null;
-            try {
-                date = new Date(dateFormat.parse((String)dateEntry).getTime());
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            float openPrice = Float.parseFloat(((LinkedHashMap<String, String>)timeEntry).get("1. open"));
-            float highPrice = Float.parseFloat(((LinkedHashMap<String, String>)timeEntry).get("2. high"));
-            float lowPrice = Float.parseFloat(((LinkedHashMap<String, String>)timeEntry).get("3. low"));
-            float closePrice = Float.parseFloat(((LinkedHashMap<String, String>)timeEntry).get("4. close"));
-            long volume = Long.parseLong(((LinkedHashMap<String, String>) timeEntry).get("5. volume"));
+            alphavantageObject.setMetaData(new MetaData(info, symbol, lastRefreshed, outputSize, timeZone));
 
-            alphavantageObject.getTimeEntries().add(new TimeEntry(date, openPrice, highPrice, lowPrice, closePrice, volume));
-        });
+            // this is hardcoded for now... I can later make it more dynamic to search keys and check if this is INTRA_DAY vs DAILY
+            body.get("Time Series (Daily)").forEach((dateEntry, timeEntry) -> {
+                Date date = null;
+                try {
+                    date = new Date(dateFormat.parse((String)dateEntry).getTime());
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                float openPrice = Float.parseFloat(((LinkedHashMap<String, String>)timeEntry).get("1. open"));
+                float highPrice = Float.parseFloat(((LinkedHashMap<String, String>)timeEntry).get("2. high"));
+                float lowPrice = Float.parseFloat(((LinkedHashMap<String, String>)timeEntry).get("3. low"));
+                float closePrice = Float.parseFloat(((LinkedHashMap<String, String>)timeEntry).get("4. close"));
+                long volume = Long.parseLong(((LinkedHashMap<String, String>) timeEntry).get("5. volume"));
 
-        return alphavantageObject;
+                alphavantageObject.getTimeEntries().add(new TimeEntry(date, openPrice, highPrice, lowPrice, closePrice, volume));
+            });
+            successApiCall = true;
+            return alphavantageObject;
+        } catch(Exception e) {
+            e.printStackTrace();
+            successApiCall = false;
+            return null;
+        }
     }
 
     private void refreshScanner() throws FileNotFoundException {
