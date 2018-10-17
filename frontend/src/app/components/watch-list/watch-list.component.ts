@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import {WatchList, WatchListService} from '../services/watch-list.service';
+import {WatchList, WatchListService} from '../../services/watch-list.service';
+import {MatTableDataSource} from '@angular/material';
 
 @Component({
   selector: 'app-watch-list',
@@ -7,6 +8,8 @@ import {WatchList, WatchListService} from '../services/watch-list.service';
   styleUrls: ['./watch-list.component.css']
 })
 export class WatchListComponent implements OnInit {
+
+  public watchList: WatchList;
 
   constructor(private watchListService: WatchListService) { }
   
@@ -16,9 +19,13 @@ export class WatchListComponent implements OnInit {
 
   getWatchList(): any {
     this.watchListService.getWatchList((watchList: WatchList) => {
-      console.log(2);
-      console.log(watchList);
+      this.watchList = watchList;
     });
   }
 
+  importWatchList() {
+    this.watchListService.importWatchListFromStockTwits((watchList: WatchList) => {
+      this.watchList = watchList;
+    });
+  }
 }

@@ -1,0 +1,34 @@
+<h3>Quote Search</h3>
+<div class="row">
+  <input title="Search bar" type="text" [(ngModel)]="searchTerm"/>
+  <button mat-button (click)="getQuote()">Search</button>
+</div>
+<div class="col-9">
+  <h3>{{stockQuote.symbol}} | ${{stockQuote.currentPrice}}</h3>
+
+  <table class="table table-striped">
+    <tbody>
+      <tr>
+        <td>Open: </td>
+        <td>${{stockQuote.openPrice}}</td>
+      </tr>
+      <tr>
+        <td>High: </td>
+        <td>${{stockQuote.highPrice}}</td>
+      </tr>
+      <tr>
+        <td>Low: </td>
+        <td>${{stockQuote.lowPrice}}</td>
+      </tr>
+      <tr>
+        <td>Previous Close: </td>
+        <td>${{stockQuote.previousClose}}</td>
+      </tr>
+      <tr>
+        <td>Volume: </td>
+        <td>{{stockQuote.volume}}</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>

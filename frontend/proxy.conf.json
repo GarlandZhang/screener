@@ -5,5 +5,33 @@
     "changeOrigin": true,
     "logLevel": "debug",
     "pathRewrite": {"^/watch-list" : "http://localhost:8080/watch-list"}
+  },
+  "/stock-twits": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {"^/stock-twits" : "http://localhost:8080/stock-twits"}
+  },
+  "/quote": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {"^/quote" : "http://localhost:8080/quote"}
+  },
+  "/group": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {"^/group" : "http://localhost:8080/group"}
+  },
+  "/user": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {"^/user" : "http://localhost:8080/user"}
   }
 }

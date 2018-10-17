@@ -1,0 +1,12 @@
+
+<h2>Groupings</h2>
+<p>group id: {{groupings.groupingOutputList[0].groupId}}</p>
+<ng-template *ngFor="let grouping of groupings.groupingOutputList; let i = index">
+  <h3>Grouping #{{i}} | id: {{grouping.groupId}}</h3>
+  <ng-template *ngFor="let indicator of grouping.screenIndicatorOutputList; let j = index">
+    <h5>Filter #{{j+1}}</h5>
+    <p>Search all stocks that are <b>{{indicator.parameterPercentChange < 0? "down " + -indicator.parameterPercentChange: "up" + indicator.parameterPercentChange}}</b>.</p>
+    <p>Time interval to search: <b>{{indicator.parameterTimeInterval}}</b></p>
+    <br>
+  </ng-template>
+</ng-template>

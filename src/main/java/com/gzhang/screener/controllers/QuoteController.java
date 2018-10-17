@@ -24,9 +24,10 @@ public class QuoteController {
     @GetMapping("/quote/{tickerSymbol}")
     public ResponseEntity<AlphavantageStockQuote> getQuote(@PathVariable String tickerSymbol) {
         StockMetadata stockMetadata = stockMetadataRepository.getByTickerSymbol(tickerSymbol);
-        if(stockMetadata == null) return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        if(stockMetadata == null);/* return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .header("Message", "Bad field input.")
-                .body(null);
+                .body(null);*/
+        //should return null but we dont have the data yet so...
 
         AlphavantageStockQuote quote = ScheduledTasks.getStockQuote(tickerSymbol);
         if(quote == null) return ResponseEntity.status(HttpStatus.BAD_REQUEST)
