@@ -34,6 +34,7 @@ public class WatchList {
     public void addTickers(List<WatchedTicker> tickers) {
         if(watchedTickers == null) watchedTickers = new ArrayList<>();
         for(WatchedTicker ticker : tickers) {
+            ticker.setWatchListId(id);
             if(!tickerExists(ticker.getTicker(), watchedTickers)) watchedTickers.add(ticker);
         }
     }

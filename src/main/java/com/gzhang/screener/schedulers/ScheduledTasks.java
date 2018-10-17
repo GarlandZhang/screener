@@ -54,7 +54,7 @@ public class ScheduledTasks {
     }
 
     // ideal: "*/15 * 9-16 * * MON-FRI"
-    @Scheduled(cron = "*/15 * * * * MON-FRI")
+    @Scheduled(cron = "*/30 * * * * MON-FRI")
     public void getStockData() throws FileNotFoundException {
         refreshScanner();
 

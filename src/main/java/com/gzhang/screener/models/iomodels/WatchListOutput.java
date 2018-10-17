@@ -22,8 +22,10 @@ public class WatchListOutput {
 
     public WatchListOutput(WatchList watchList) {
         this();
-        for(WatchedTicker watchedTicker: watchList.getWatchedTickers()) {
-            tickers.add(new WatchedTickerOutput(watchedTicker));
+        if(watchList != null && watchList.getWatchedTickers() != null) {
+            for (WatchedTicker watchedTicker : watchList.getWatchedTickers()) {
+                tickers.add(new WatchedTickerOutput(watchedTicker));
+            }
         }
     }
 }

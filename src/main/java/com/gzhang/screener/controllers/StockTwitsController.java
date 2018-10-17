@@ -75,7 +75,11 @@ public class StockTwitsController {
         }
 
         // extract list of tickers, store in user and save
-        if(appUser.getWatchList() == null) appUser.setWatchList(new WatchList());
+        if(appUser.getWatchList() == null) {
+            appUser.setWatchList(new WatchList());
+            appUser.getWatchList().setUserId(appUser.getId());
+            appUser = userRepository.save(appUser);
+        }
         appUser.getWatchList().addTickers(getTickersFromWatchlist(watchListDetailsUrl));
         userRepository.save(appUser);
 
