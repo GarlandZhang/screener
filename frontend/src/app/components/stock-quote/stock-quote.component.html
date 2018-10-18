@@ -3,7 +3,7 @@
   <input title="Search bar" type="text" [(ngModel)]="searchTerm"/>
   <button mat-button (click)="getQuote()">Search</button>
 </div>
-<div class="col-9">
+<div class="col-9" [hidden]="stockQuote == null">
   <h3>{{stockQuote.symbol}} | ${{stockQuote.currentPrice}}</h3>
 
   <table class="table table-striped">

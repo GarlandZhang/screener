@@ -216,13 +216,23 @@ public class ScreenerController {
 
         // get list of daily stock data for the given stock
         // assumption: sorted in reverse chronological order
-        List<DailyStockData> dailyStockData = dailyStockDataRepository.getDailyStockDataByMetadataId(stock.getId());
+        List<DailyStockData> dailyStockData = dailyStockDataRepository.getNumDailyStockDataWithMetadataId(stock.getId(), 1 + interpretIntervalIntoDays(performanceTimeInterval));
+        if(dailyStockData == null || dailyStockData.size() == 0) return false;
 
         // get entries to compare for meeting performance criteria
-        DailyStockData latestDayEntry = getDayEntry(dailyStockData, "LATEST");
+        DailyStockData latestDayEntry = getDayEntry(dailyStockData, "0D");
         DailyStockData performanceDayEntry = getDayEntry(dailyStockData, performanceTimeInterval);
 
         return dayEntryMeetsCriteria(latestDayEntry, performanceDayEntry, performancePercentChange, performanceDirection);
+    }
+
+    private int interpretIntervalIntoDays(String performanceTimeInterval) {
+        int length = performanceTimeInterval.length();
+        int quantity = Integer.parseInt(performanceTimeInterval.substring(0, length - 1));
+        char appendingChar = performanceTimeInterval.charAt(length - 1);
+        if(appendingChar == 'D') return quantity;
+        if(appendingChar == 'W') return 7 * quantity;
+        return quantity; // todo
     }
 
     private boolean dayEntryMeetsCriteria(DailyStockData latestDayEntry, DailyStockData performanceDayEntry, float performancePercentChange, boolean performanceDirection) {
@@ -265,10 +275,10 @@ public class ScreenerController {
     }
 
     private TimeInterval getTimeIntervalFromField(String timeIntervalField) {
-        if(timeIntervalField.equals("LATEST")) return TimeInterval.LATEST;
-        if(timeIntervalField.equals("PAST DAY")) return TimeInterval.PAST_DAY;
-        if(timeIntervalField.equals("PAST THREE DAYS")) return TimeInterval.PAST_THREE_DAYS;
-        if(timeIntervalField.equals("PAST WEEK")) return TimeInterval.PAST_WEEK;
+        if(timeIntervalField.equals("0D")) return TimeInterval.LATEST;
+        if(timeIntervalField.equals("1D")) return TimeInterval.PAST_DAY;
+        if(timeIntervalField.equals("3D")) return TimeInterval.PAST_THREE_DAYS;
+//        if(timeIntervalField.equals("PAST WEEK")) return TimeInterval.PAST_WEEK;
 
         // temporary TODO
         return TimeInterval.LATEST;

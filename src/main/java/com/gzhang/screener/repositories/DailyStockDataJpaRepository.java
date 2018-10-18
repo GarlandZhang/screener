@@ -11,4 +11,7 @@ public interface DailyStockDataJpaRepository extends JpaRepository<DailyStockDat
 
     @Query ("SELECT d FROM DailyStockData d WHERE d.metadataId = :metadataId ORDER BY d.dateCreated DESC")
     List<DailyStockData> findAllByMetadataId(@Param("metadataId") int metadataId);
+
+    /*@Query("SELECT ?2 FROM DailyStockData d WHERE d.stockMetadata= ?1")*/
+    /*List<DailyStockData> findTopNByMetadataId(int metadataId, int numEntries);*/
 }

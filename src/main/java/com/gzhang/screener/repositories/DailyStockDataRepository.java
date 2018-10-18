@@ -9,4 +9,6 @@ public interface DailyStockDataRepository {
     DailyStockData save (DailyStockData dailyStockData);
 
     List<DailyStockData> getDailyStockDataByMetadataId(int metadataId);
+
+    List<DailyStockData> getNumDailyStockDataWithMetadataId(int id, int numEntries);
 }

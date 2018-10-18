@@ -16,7 +16,8 @@ import java.sql.Date;
 import java.util.Scanner;
 
 /**
- * to fetch daily stock data
+ *
+ * to fetch daily stock data from Alphavantage
  */
 @RestController
 public class AlphavantageApiController {

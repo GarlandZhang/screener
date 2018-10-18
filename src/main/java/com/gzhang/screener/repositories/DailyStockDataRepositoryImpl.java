@@ -23,4 +23,10 @@ public class DailyStockDataRepositoryImpl implements DailyStockDataRepository {
     public List<DailyStockData> getDailyStockDataByMetadataId(int metadataId) {
         return dailyStockDataJpaRepository.findAllByMetadataId(metadataId);
     }
+
+    @Override
+    public List<DailyStockData> getNumDailyStockDataWithMetadataId(int id, int numEntries) {
+//        return dailyStockDataJpaRepository.findTopNByMetadataId(id, numEntries);
+        return dailyStockDataJpaRepository.findAllByMetadataId(id);
+    }
 }
