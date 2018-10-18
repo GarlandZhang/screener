@@ -19,6 +19,7 @@ public class WatchListController {
 
     /**
      * returns watchlist for specified user
+     * TODO: keep track of which stocks came from StockTwits (this way we can handle removed stocks as well
      * @param userId
      * @return
      */
