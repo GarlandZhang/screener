@@ -17,6 +17,11 @@ public class WatchListController {
     @Autowired
     UserRepository userRepository;
 
+    /**
+     * returns watchlist for specified user
+     * @param userId
+     * @return
+     */
     @GetMapping("/watch-list/user/{userId}")
     public ResponseEntity<WatchListOutput> getWatchList(@PathVariable int userId) {
         AppUser user = userRepository.getUserById(userId);

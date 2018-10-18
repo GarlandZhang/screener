@@ -21,6 +21,9 @@ import org.springframework.web.bind.annotation.*;
 import java.sql.Date;
 import java.util.List;
 
+/**
+ * handles request mappings for grouping related api calls; also includes stock screening functionality
+ */
 @RestController
 public class ScreenerController {
 
@@ -36,6 +39,12 @@ public class ScreenerController {
     @Autowired
     ScreenIndicatorGroupingRepository screenIndicatorGroupingRepository;
 
+    /**
+     * saves performance indicator (added to a new grouping)
+     * @param userId
+     * @param screenIndicatorInput
+     * @return
+     */
     @PostMapping("/user/{userId}/save/indicator")
     public ResponseEntity<ScreenIndicatorGroupingOutput> saveNewIndicator(@PathVariable int userId, @RequestBody ScreenIndicatorInput screenIndicatorInput) {
         if(!validIndicatorInput(screenIndicatorInput)) {
@@ -46,7 +55,7 @@ public class ScreenerController {
 
         // store in grouping
         ScreenIndicatorGrouping grouping = new ScreenIndicatorGrouping();
-        grouping = screenIndicatorGroupingRepository.save(grouping);
+        grouping = screenIndicatorGroupingRepository.save(grouping); //save to retrieve id (this is not optimal; TODO look into UUID)
         grouping.addIndicator(screenIndicatorInput.toScreenIndicator());
         grouping.setUserId(userId);
 
@@ -57,6 +66,12 @@ public class ScreenerController {
                 .body(new ScreenIndicatorGroupingOutput(grouping));
     }
 
+    /**
+     * saves a new grouping (a wrapper for a list of performance indicators)
+     * @param userId
+     * @param groupingInput
+     * @return
+     */
     @PostMapping("/user/{userId}/save/grouping")
     public ResponseEntity<ScreenIndicatorGroupingOutput> saveNewGrouping(@PathVariable int userId, @RequestBody ScreenIndicatorGroupingInput groupingInput) {
         if(!validGroupingInput(groupingInput)) {
@@ -74,6 +89,11 @@ public class ScreenerController {
                 .body(new ScreenIndicatorGroupingOutput(grouping));
     }
 
+    /**
+     * retrieves grouping based on groupId
+     * @param groupId
+     * @return
+     */
     @GetMapping("/group/{groupId}")
     public ResponseEntity<ScreenIndicatorGroupingOutput> getGrouping(@PathVariable int groupId) {
 
@@ -90,6 +110,12 @@ public class ScreenerController {
                 .body(new ScreenIndicatorGroupingOutput(grouping));
     }
 
+    /**
+     * screens for stocks based on grouping performance indicators
+     * TODO: extremely unoptimal (look into distributed databases, opening multiple sessions, preprocessed data...)
+     * @param groupId
+     * @return
+     */
     @GetMapping("/group/{groupId}/screen/stocks")
     public ResponseEntity<SymbolList> screenStocksWithPerformanceIndicators(@PathVariable int groupId) {
         ScreenIndicatorGrouping grouping = screenIndicatorGroupingRepository.getById(groupId);
@@ -111,7 +137,6 @@ public class ScreenerController {
             // check all performance indicator
             if(stockMeetsScreenGrouping(stock, grouping)) {
                 symbolList.add(stock);
-                System.out.println(stock.getTicker());
             }
         }
 
@@ -120,6 +145,12 @@ public class ScreenerController {
                 .body(symbolList);
     }
 
+    /**
+     * update existing group by adding another indicator
+     * @param groupId
+     * @param indicatorInput
+     * @return
+     */
     @PutMapping("/group/{groupId}/add/indicator")
     public ResponseEntity<ScreenIndicatorGroupingOutput> addIndicatorToGrouping(@PathVariable int groupId, @RequestBody ScreenIndicatorInput indicatorInput) {
         if(!validIndicatorInput(indicatorInput)) {
@@ -144,6 +175,12 @@ public class ScreenerController {
                 .body(new ScreenIndicatorGroupingOutput(grouping));
     }
 
+    /**
+     * update existing group by removing an indicator
+     * @param groupId
+     * @param indicatorId
+     * @return
+     */
     @PutMapping("/group/{groupId}/remove/indicator/{indicatorId}")
     public ResponseEntity<ScreenIndicatorGroupingOutput> removeIndicatorToGrouping(@PathVariable int groupId, @PathVariable int indicatorId) {
         ScreenIndicatorGrouping grouping = screenIndicatorGroupingRepository.getById(groupId);
@@ -175,6 +212,11 @@ public class ScreenerController {
                 .body(new ScreenIndicatorGroupingOutput(grouping));
     }
 
+    /**
+     * delete a grouping (and its children indicators)
+     * @param groupId
+     * @return
+     */
     @DeleteMapping("/group/{groupId}")
     public ResponseEntity<String> deleteGrouping(@PathVariable int groupId) {
         screenIndicatorGroupingRepository.deleteById(groupId);
@@ -184,6 +226,12 @@ public class ScreenerController {
                 .body(null);
     }
 
+    /**
+     * returns true if stock meets grouping indicators
+     * @param stock
+     * @param screenIndicatorGrouping
+     * @return
+     */
     private boolean stockMeetsScreenGrouping(StockMetadata stock, ScreenIndicatorGrouping screenIndicatorGrouping) {
         // check each performance indicator
         for(ScreenIndicator screenIndicator : screenIndicatorGrouping.getScreenIndicatorList()) {
@@ -196,6 +244,11 @@ public class ScreenerController {
         return true;
     }
 
+    /**
+     * return true if grouping is invalid (checks for bad input)
+     * @param groupingInput
+     * @return
+     */
     private boolean validGroupingInput(ScreenIndicatorGroupingInput groupingInput) {
         if(groupingInput.getScreenIndicatorInputList() == null || groupingInput.getScreenIndicatorInputList().size() == 0) return false;
 
@@ -207,11 +260,23 @@ public class ScreenerController {
         return true;
     }
 
-
+    /**
+     * returns true if indicatir is invalid (checks for bad input)
+     * @param screenIndicatorInput
+     * @return
+     */
     private boolean validIndicatorInput(ScreenIndicatorInput screenIndicatorInput) {
         return screenIndicatorInput != null && !screenIndicatorInput.getParameterTimeInterval().equals("");
     }
 
+    /**
+     * returns true if stock meets specified indicator based on percentchange, time interval, and performance direction
+     * @param stock
+     * @param performancePercentChange
+     * @param performanceTimeInterval
+     * @param performanceDirection
+     * @return
+     */
     private boolean stockMeetsPerformanceCriteria(StockMetadata stock, float performancePercentChange, String performanceTimeInterval, boolean performanceDirection) {
 
         // get list of daily stock data for the given stock
@@ -226,6 +291,11 @@ public class ScreenerController {
         return dayEntryMeetsCriteria(latestDayEntry, performanceDayEntry, performancePercentChange, performanceDirection);
     }
 
+    /**
+     * return number of days based on textual argument
+     * @param performanceTimeInterval
+     * @return
+     */
     private int interpretIntervalIntoDays(String performanceTimeInterval) {
         int length = performanceTimeInterval.length();
         int quantity = Integer.parseInt(performanceTimeInterval.substring(0, length - 1));
@@ -235,6 +305,14 @@ public class ScreenerController {
         return quantity; // todo
     }
 
+    /**
+     * returns true if a day entry in the stocks history meets requirements of performance indicator
+     * @param latestDayEntry
+     * @param performanceDayEntry
+     * @param performancePercentChange
+     * @param performanceDirection
+     * @return
+     */
     private boolean dayEntryMeetsCriteria(DailyStockData latestDayEntry, DailyStockData performanceDayEntry, float performancePercentChange, boolean performanceDirection) {
         // compares close price of latest entry to close price of timeEntry
         // true -> above percentage
@@ -250,6 +328,12 @@ public class ScreenerController {
                                       change <= (performancePercentChange / 100.00);
     }
 
+    /**
+     * return the oldest candidate entry based on the time interval, timeIntervalField
+     * @param dailyStockDataList
+     * @param timeIntervalField
+     * @return
+     */
     private DailyStockData getDayEntry(List<DailyStockData> dailyStockDataList, String timeIntervalField) {
         TimeInterval timeInterval = getTimeIntervalFromField(timeIntervalField);
 
@@ -268,12 +352,25 @@ public class ScreenerController {
 
     }
 
+    /**
+     * return true if a date is within the timeInterval specified
+     * @param dateEntry
+     * @param latestDate
+     * @param timeInterval
+     * @return
+     */
     private boolean withinTimeInterval(Date dateEntry, Date latestDate, TimeInterval timeInterval) {
         return latestDate.getTime()
              - dateEntry.getTime()
                 <= timeInterval.getNumMillis();
     }
 
+    /**
+     * return enum of the type specified by the timeIntervalField
+     * TODO: dynamic rather than hardcoded (parse string for value and calculate for numMillis)
+     * @param timeIntervalField
+     * @return
+     */
     private TimeInterval getTimeIntervalFromField(String timeIntervalField) {
         if(timeIntervalField.equals("0D")) return TimeInterval.LATEST;
         if(timeIntervalField.equals("1D")) return TimeInterval.PAST_DAY;

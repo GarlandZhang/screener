@@ -22,13 +22,24 @@ public class UserController {
     @Autowired
     UserRepository userRepository;
 
+    /**
+     * url endpoint for creating new user
+     * @param user
+     * @return
+     */
     @PostMapping("/user")
     public ResponseEntity<AppUser> createUser(@RequestBody AppUser user) {
+        AppUser newUser = new AppUser();
         return ResponseEntity.status(HttpStatus.OK)
                 .header("Message", "User created")
-                .body(userRepository.save(user));
+                .body(userRepository.save(newUser));
     }
 
+    /**
+     * gets groupings for a user
+     * @param userId
+     * @return
+     */
     @GetMapping("/user/{userId}/groupings")
     public ResponseEntity<GroupingsOutput> getGroupings (@PathVariable int userId) {
         AppUser user = userRepository.getUserById(userId);
@@ -39,6 +50,7 @@ public class UserController {
                     .body(null);
         }
 
+        // retrieve list of groupings; if null, then return an empty list
         List<ScreenIndicatorGrouping> groupings = user.getScreenIndicatorGroupingList();
         if(groupings == null) {
             return ResponseEntity.status(HttpStatus.OK)
@@ -47,7 +59,7 @@ public class UserController {
         }
 
         return ResponseEntity.status(HttpStatus.OK)
-                .header("Message", "Empty")
+                .header("Message", "Retrieved groupings")
                 .body(new GroupingsOutput(groupings));
     }
 

@@ -30,6 +30,11 @@ public class StockTwitsController {
     final String APP_URL="http://localtest.me:8080/stock-twits/oauth/response/user/";
     final String CLIENT_SECRET="ea9d2a804c7607d10a3e1fbfdec8d717aaf1f3b3";
 
+    /**
+     * gets oauth url (frontend usage, no need to hardcode)
+     * @param userId
+     * @return
+     */
     @GetMapping("/stock-twits/oauth/url/user/{userId}")
     public String getOAuthUrl(int userId) {
         return "https://api.stocktwits.com/api/2/oauth/authorize?" +
@@ -39,6 +44,12 @@ public class StockTwitsController {
                 "&scope=read,watch_lists,publish_messages,publish_watch_lists,direct_messages,follow_users,follow_stocks";
     }
 
+    /**
+     * gets oauth for specified user
+     * @param userId
+     * @param code
+     * @return
+     */
     @GetMapping("/stock-twits/oauth/response/user/{userId}")
     public ResponseEntity<AccessTokenResponse> receiveCodeAndFetchAccessToken(@PathVariable int userId, @RequestParam String code) {
 
@@ -59,6 +70,11 @@ public class StockTwitsController {
                 .body(new AccessTokenResponse(accessTokenResponse.getAccess_token()));
     }
 
+    /**
+     * imports watch list from stock-twits and integrates with currently existing watch list of user
+     * @param userId
+     * @return
+     */
     @GetMapping("/stock-twits/watchlist/user/{userId}")
     public ResponseEntity<WatchListOutput> importWatchList(@PathVariable int userId) {
         // get access token
@@ -80,6 +96,8 @@ public class StockTwitsController {
             appUser.getWatchList().setUserId(appUser.getId());
             appUser = userRepository.save(appUser);
         }
+        // adds tickers to watchlist (omits duplicates)
+        // TODO: optimize adding (rather than comparing each one, consider hashmap) -> O(M + N) time
         appUser.getWatchList().addTickers(getTickersFromWatchlist(watchListDetailsUrl));
         userRepository.save(appUser);
 
@@ -88,6 +106,11 @@ public class StockTwitsController {
                 .body(new WatchListOutput(appUser.getWatchList()));
     }
 
+    /**
+     * return list of tickers from stocktwits watchlist
+     * @param watchListDetailsUrl
+     * @return
+     */
     private List<WatchedTicker> getTickersFromWatchlist(String watchListDetailsUrl) {
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<StockTwitsWatchListShowResponse> responseEntity
@@ -96,6 +119,12 @@ public class StockTwitsController {
         return responseEntity.getBody().standardizeWatchList();
     }
 
+    /**
+     * gets url of stocktwits watchlist API endpoint
+     * @param userId
+     * @param accessToken
+     * @return
+     */
     private String getWatchListDetailsUrl(int userId, String accessToken) {
         String watchListUrl = getWatchListUrl(userId, accessToken);
         int watchListId = getWatchListId(watchListUrl);
@@ -108,6 +137,11 @@ public class StockTwitsController {
                 + accessToken;
     }
 
+    /**
+     * gets id of watchlist from url
+     * @param watchListUrl
+     * @return
+     */
     private int getWatchListId(String watchListUrl) {
         // make GET request
         RestTemplate restTemplate = new RestTemplate();
@@ -118,11 +152,23 @@ public class StockTwitsController {
         return responseEntity.getBody().getWatchlists().get(0).getId();
     }
 
+    /**
+     * gets watchlist url (this gets all watchlists)
+     * @param userId
+     * @param accessToken
+     * @return
+     */
     private String getWatchListUrl(int userId, String accessToken) {
         return "https://api.stocktwits.com/api/2/watchlists.json?" +
                 "access_token=" + accessToken;
     }
 
+    /**
+     * returns access token url to retrieve for client
+     * @param userId
+     * @param code
+     * @return
+     */
     private String getAccessTokenUrl(int userId, String code) {
         return "https://api.stocktwits.com/api/2/oauth/token?" +
                 "client_id=" + CLIENT_ID +
@@ -132,6 +178,12 @@ public class StockTwitsController {
                 "&redirect_uri=" + APP_URL + userId;
     }
 
+    /**
+     * makes the api call for getting actual access token
+     * @param userId
+     * @param code
+     * @return
+     */
     private RequestForAccessTokenResponse getAccessToken(int userId, String code) {
         String tokenUrl = getAccessTokenUrl(userId, code);
 

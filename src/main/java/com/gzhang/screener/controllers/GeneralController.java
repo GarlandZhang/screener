@@ -9,6 +9,10 @@ import springfox.documentation.annotations.ApiIgnore;
 import static lombok.AccessLevel.PACKAGE;
 import static lombok.AccessLevel.PRIVATE;
 
+
+/**
+ * used for mapping '/' to swagger-ui
+ */
 @Controller
 @ApiIgnore
 @FieldDefaults(level = PRIVATE, makeFinal = true)
