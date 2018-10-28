@@ -5,6 +5,7 @@ approach #1:
 -create field in table that specifies id of previous stock entry
 -store head entry id (like a linked list!)
 -time complexity: O(mlogn) where m is number of entries and n is number of rows in table
+  -update. worse case runtime is O(nlogn) and does not scale with more entries so inefficient...
 
 # screener
 a web app to provide stock filters by certain technical requirements
